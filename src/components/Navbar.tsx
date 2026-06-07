@@ -1,102 +1,30 @@
-import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-
-const navLinks = [
-  { label: "Home", href: "#home" },
+import { useState } from "react";
+const links = [
+  { label: "Home", href: "#" },
   { label: "About", href: "#about" },
   { label: "Schedule", href: "#schedule" },
   { label: "Register", href: "#register" },
 ];
-
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleNavClick = (href: string) => {
-    setIsOpen(false);
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-
+  const [open, setOpen] = useState(false);
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "glass shadow-lg py-3" : "py-5"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => handleNavClick("#home")}
-            className="flex items-center gap-2 group"
-          >
-            <div className="w-10 h-10 rounded-full gold-gradient flex items-center justify-center text-[#2D0A4E] font-bold text-lg transition-transform group-hover:scale-110">
-              I
-            </div>
-            <span className="text-white font-bold text-xl tracking-wide">
-              ILPC <span className="gold-text">2026</span>
-            </span>
-          </button>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.href}
-                onClick={() => handleNavClick(link.href)}
-                className="text-white/80 hover:text-[#C9972A] transition-colors duration-300 text-sm font-medium tracking-wide uppercase"
-              >
-                {link.label}
-              </button>
-            ))}
-            <button
-              onClick={() => handleNavClick("#register")}
-              className="gold-gradient text-[#2D0A4E] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-[#C9972A]/30 transition-all duration-300 hover:scale-105"
-            >
-              Register Now
-            </button>
-          </div>
-
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-white p-2"
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
+      style={{ background: "rgba(10,0,3,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(201,151,42,0.1)" }}>
+      <div className="flex items-center gap-3">
+        <img src="/hbg-logo.svg" alt="HBG" className="w-9 h-9" style={{ filter: "drop-shadow(0 0 8px rgba(255,69,0,0.6))" }} />
+        <div>
+          <div className="text-white font-bold text-sm">MTA <span style={{ color: "#C9972A" }}>2026</span></div>
+          <div className="text-white/40 text-[9px] tracking-widest uppercase">Mighty Turn Around Assembly</div>
         </div>
-
-        {/* Mobile Nav */}
-        {isOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-[#C9972A]/20 pt-4 animate-fade-in-up">
-            <div className="flex flex-col gap-3">
-              {navLinks.map((link) => (
-                <button
-                  key={link.href}
-                  onClick={() => handleNavClick(link.href)}
-                  className="text-white/80 hover:text-[#C9972A] transition-colors duration-300 text-left py-2 text-sm font-medium tracking-wide uppercase"
-                >
-                  {link.label}
-                </button>
-              ))}
-              <button
-                onClick={() => handleNavClick("#register")}
-                className="gold-gradient text-[#2D0A4E] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide mt-2 w-fit"
-              >
-                Register Now
-              </button>
-            </div>
-          </div>
-        )}
+      </div>
+      <div className="hidden md:flex items-center gap-8">
+        {links.map((l) => (
+          <a key={l.label} href={l.href} className="text-white/60 hover:text-white text-sm font-medium transition-colors">{l.label}</a>
+        ))}
+        <a href="#register" className="px-5 py-2 rounded-full text-sm font-bold transition-all hover:scale-105"
+          style={{ background: "linear-gradient(135deg, #C9972A, #d4af37)", color: "#0d0002" }}>Register Free</a>
       </div>
     </nav>
   );
 };
-
 export default Navbar;

@@ -58,7 +58,7 @@ const RegistrationForm = () => {
           <h3 className="text-2xl font-bold text-white mb-2">Registration Complete!</h3>
           <p className="text-[#B88FC7] text-sm leading-relaxed mb-2">
             Thank you, <span className="text-[#C9972A] font-semibold">{formData.fullName}</span>!
-            Your registration for ILPC 2026 has been received.
+            Your registration for MTA 2026 has been received.
           </p>
           <p className="text-white/60 text-xs leading-relaxed">
             A confirmation email is on its way to <span className="text-white/80">{formData.email}</span>.<br />
@@ -166,7 +166,7 @@ const RegistrationForm = () => {
 
           <div>
             <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              What do you desire from ILPC 2026?
+              What do you desire from MTA 2026?
             </label>
             <textarea
               name="desire"
@@ -199,7 +199,7 @@ const RegistrationForm = () => {
         </button>
 
         <p className="text-white/30 text-[10px] text-center mt-3">
-          Free registration • Your details go directly to the ILPC team
+          Free registration • Your details go directly to the MTA team
         </p>
       </form>
     </div>

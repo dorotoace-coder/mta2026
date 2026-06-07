@@ -1,88 +1,77 @@
-import CountdownTimer from "./CountdownTimer";
-import { Droplets, ChevronDown } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 const HeroSection = () => {
+  const scrollToRegister = () => {
+    const el = document.querySelector("#register");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
   const scrollToSchedule = () => {
     const el = document.querySelector("#schedule");
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section
-      id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ background: "linear-gradient(160deg, #1A0533 0%, #2D0A4E 40%, #3D1560 100%)" }}
-    >
-      {/* Decorative floating orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-[#C9972A]/5 blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-[#C9972A]/5 blur-3xl animate-float-delayed" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-[#C9972A]/10 animate-rotate-slow" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-[#C9972A]/5 animate-rotate-slow" style={{ animationDirection: "reverse", animationDuration: "25s" }} />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* Fire/river ambient layers */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full opacity-30"
+          style={{ background: "radial-gradient(ellipse, #ff4500 0%, #c0392b 30%, transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[400px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(ellipse, #d4af37 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute bottom-1/4 left-0 w-[400px] h-[300px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(ellipse, #8B0000 0%, transparent 70%)", filter: "blur(60px)" }} />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center pt-24 pb-16">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 glass rounded-full px-5 py-2 mb-8 animate-fade-in-up">
-          <Droplets className="w-4 h-4 text-[#C9972A]" />
-          <span className="text-[#C9972A] text-xs sm:text-sm font-semibold tracking-widest uppercase">
-            June 5–7, 2026 • Akute, Nigeria
-          </span>
+        <div className="inline-flex items-center gap-2 bg-[#C9972A]/15 border border-[#C9972A]/35 rounded-full px-5 py-2 mb-8">
+          <span className="text-[#C9972A] text-xs font-bold tracking-widest uppercase">HBG Ministry Annual Assembly</span>
         </div>
 
         {/* Title */}
-        <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white leading-tight mb-4 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          ILPC <span className="gold-text">2026</span>
+        <h1 className="text-6xl sm:text-8xl font-black text-white mb-3 leading-none tracking-tight"
+          style={{ textShadow: "0 0 60px rgba(255,69,0,0.4), 0 0 120px rgba(201,151,42,0.2)" }}>
+          MTA <span style={{ color: "#C9972A" }}>2026</span>
         </h1>
-
-        <p className="text-base sm:text-lg text-white/50 font-medium tracking-widest uppercase mb-6 animate-fade-in-up" style={{ animationDelay: "0.35s" }}>
-          International Leaders & Pastors Conference
+        <p className="text-lg sm:text-2xl font-bold text-white/70 tracking-[0.12em] uppercase mb-2">
+          Mighty Turn Around Assembly
+        </p>
+        <p className="text-base sm:text-lg font-medium italic mb-8"
+          style={{ color: "rgba(201,151,42,0.85)" }}>
+          "There is a river whose streams make glad the city of God"
+        </p>
+        <p className="text-white/50 text-sm mb-10 max-w-xl mx-auto leading-relaxed">
+          A gathering of fire, prayer, and prophetic power —<br/>
+          where rivers of God move without restraint.
         </p>
 
-        {/* Theme */}
-        <div className="perspective-1000 mb-12 animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
-          <div className="inline-block glass rounded-2xl px-8 sm:px-12 py-5 sm:py-6 card-3d animate-pulse-gold">
-            <p className="text-xs sm:text-sm text-[#C9972A]/80 font-semibold tracking-widest uppercase mb-1">
-              Conference Theme
-            </p>
-            <h2 className="text-2xl sm:text-4xl font-bold gold-text italic">
-              "Fresh Oil for a New Season"
-            </h2>
-          </div>
+        {/* Meta pills */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-10 text-sm">
+          {[
+            { icon: "📅", text: "September 4–6, 2026" },
+            { icon: "📍", text: "Akute, Nigeria" },
+            { icon: "🌐", text: "Zoom Livestream" },
+            { icon: "✦", text: "Free Registration" },
+          ].map((p) => (
+            <span key={p.text} className="flex items-center gap-2 px-4 py-2 rounded-full border text-white/70"
+              style={{ background: "rgba(201,151,42,0.08)", borderColor: "rgba(201,151,42,0.25)" }}>
+              {p.icon} {p.text}
+            </span>
+          ))}
         </div>
 
-        {/* Host */}
-        <p className="text-white/60 text-sm sm:text-base mb-10 animate-fade-in-up" style={{ animationDelay: "0.65s" }}>
-          Hosted by <span className="text-white font-semibold">Pastor Amos Unogwu</span> — HBG Ministry, Akute Nigeria
-        </p>
-
-        {/* Countdown */}
-        <div className="mb-12 animate-fade-in-up" style={{ animationDelay: "0.8s" }}>
-          <p className="text-white/40 text-xs uppercase tracking-widest mb-4 font-medium">
-            Countdown to Conference
-          </p>
-          <CountdownTimer />
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button onClick={scrollToRegister}
+            className="px-10 py-4 rounded-full font-black text-sm tracking-widest uppercase shadow-2xl transition-all hover:scale-105"
+            style={{ background: "linear-gradient(135deg, #C9972A, #d4af37)", color: "#1a0000", boxShadow: "0 0 30px rgba(201,151,42,0.4)" }}>
+            Register Free →
+          </button>
+          <button onClick={scrollToSchedule}
+            className="px-10 py-4 rounded-full font-bold text-sm tracking-widest uppercase border border-white/20 text-white/70 hover:border-white/40 transition-all">
+            View Programme ↓
+          </button>
         </div>
-
-        {/* CTA */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.95s" }}>
-          <a
-            href="#register"
-            className="inline-block gold-gradient text-[#2D0A4E] px-10 py-4 rounded-full font-bold text-base sm:text-lg tracking-wide hover:shadow-xl hover:shadow-[#C9972A]/30 transition-all duration-300 hover:scale-105"
-          >
-            Register Now
-          </a>
-        </div>
-
-        {/* Scroll indicator */}
-        <button
-          onClick={scrollToSchedule}
-          className="mt-16 inline-flex flex-col items-center text-white/30 hover:text-[#C9972A] transition-colors animate-fade-in-up"
-          style={{ animationDelay: "1.1s" }}
-        >
-          <span className="text-[10px] uppercase tracking-widest mb-2">Explore</span>
-          <ChevronDown className="w-5 h-5 animate-bounce" />
-        </button>
       </div>
     </section>
   );
