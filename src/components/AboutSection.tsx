@@ -116,7 +116,7 @@ const AboutSection = () => (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { month: "Jan–Feb", name: "STIR UP", desc: "21 days prayer & fasting to open the year", icon: "⚡" },
-            { month: "Jun", name: "ILPC 2026", desc: "Fresh Oil for a New Season — completed ✓", icon: "🫒" },
+            { month: "Jun", name: "HBG Worship Sound", desc: "Seasonal worship sound — completed ✓", icon: "🎶" },
             { month: "Aug 13–Sep 2", name: "We Wait", desc: "21 days fasting & prayer — direct entry into MTA", icon: "🙏" },
             { month: "Sep 4–6", name: "MTA 2026", desc: "Mighty Turn Around Assembly — the culmination", icon: "🔥", highlight: true },
           ].map((e) => (

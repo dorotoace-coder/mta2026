@@ -66,7 +66,7 @@ const SpotifySection = () => {
           Tune Your Spirit
         </h3>
         <p className="text-white/50 text-sm">
-          The official ILPC 2026 anthem — Aku Te Nigeria
+          The official MTA 2026 worship sound — Aku Te Nigeria
         </p>
       </div>
 
@@ -125,7 +125,7 @@ const SpotifySection = () => {
           {/* Track info */}
           <p className="text-white font-bold text-base mb-1">Aku Te Nigeria</p>
           <p className="text-[#B88FC7] text-xs font-medium tracking-wider uppercase mb-5">
-            ILPC 2026 — Fresh Oil for a New Season
+            MTA 2026 — Worship Sound
           </p>
 
           {/* Progress bar */}

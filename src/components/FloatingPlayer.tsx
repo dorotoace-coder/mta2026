@@ -51,7 +51,7 @@ const FloatingPlayer = () => {
 
         <div className="leading-tight">
           <p className="text-white text-xs font-bold">Aku Te Nigeria</p>
-          <p className="text-[#C9972A] text-[10px]">ILPC 2026 Anthem</p>
+          <p className="text-[#C9972A] text-[10px]">MTA 2026 Worship Sound</p>
         </div>
 
         <button
