@@ -37,5 +37,10 @@ DROP POLICY IF EXISTS "MTA registrations admin read" ON mta_registrations;
 CREATE POLICY "MTA registrations admin read" ON mta_registrations
   FOR SELECT USING (auth.role() = 'authenticated');
 
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT INSERT ON TABLE public.mta_registrations TO anon;
+GRANT INSERT ON TABLE public.mta_registrations TO authenticated;
+GRANT SELECT ON TABLE public.mta_registrations TO authenticated;
+
 CREATE INDEX IF NOT EXISTS idx_mta_registrations_created_at ON mta_registrations (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_mta_registrations_email      ON mta_registrations (email);
