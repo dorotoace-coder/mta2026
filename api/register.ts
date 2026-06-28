@@ -10,6 +10,21 @@ const EVENT_DATES = "September 4–6, 2026";
 const EVENT_LOCATION = "HBG Ministry, Akute, Nigeria & Online";
 const REG_TABLE = "mta_registrations";
 
+const safeSupabaseHost = (value: string | undefined): string | null => {
+  if (!value) return null;
+  try {
+    return new URL(value).host;
+  } catch {
+    return "invalid-url";
+  }
+};
+
+const safeKeyDiagnostics = (value: string | undefined) => ({
+  present: Boolean(value),
+  length: value?.length ?? 0,
+  prefix6: value ? value.slice(0, 6) : null,
+});
+
 type Registration = {
   fullName: string;
   email: string;
@@ -60,13 +75,8 @@ async function saveToSupabase(data: Registration): Promise<void> {
         "[register] SUPABASE_INSERT_DIAGNOSTIC",
         JSON.stringify(
           {
-            supabase_url_host: (() => {
-              try {
-                return new URL(supabaseUrl as string).host;
-              } catch {
-                return "invalid-url";
-              }
-            })(),
+            supabase_url_host: safeSupabaseHost(supabaseUrl),
+            supabase_anon_key: safeKeyDiagnostics(supabaseKey),
             table: REG_TABLE,
             payload_keys: Object.keys(payload),
             attendance_mode: data.attendanceMode,
@@ -215,7 +225,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const previewDiagnostics =
       process.env.VERCEL_ENV === "preview"
         ? {
-            supabase_url: process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).host : null,
+            supabase_url_host: safeSupabaseHost(process.env.SUPABASE_URL),
+            supabase_anon_key: safeKeyDiagnostics(process.env.SUPABASE_ANON_KEY),
             payload_keys: ["full_name", "email", "phone", "whatsapp", "ministry", "designation", "attendance_mode", "desire", "source", "status", "created_at"],
             attendance_mode: attendanceMode,
             db_error: dbError,
