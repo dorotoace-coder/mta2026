@@ -1,44 +1,50 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
-const FROM = "ILPC 2026 <noreply@heartbeatofgod.ca>";
+const FROM = "MTA 2026 <noreply@heartbeatofgod.ca>";
+const EVENT_NAME = "MTA 2026 — EXPLOITS";
+const EVENT_TAGLINE = "Mighty Turn Around Assembly";
+const EVENT_DATES = "September 4–6, 2026";
+const EVENT_LOCATION = "HBG Ministry, Akute, Nigeria & Online";
+const REG_TABLE = "mta_registrations";
 
-/** Write registration to Supabase inquiries table (non-blocking). */
-async function saveToSupabase(data: {
+type Registration = {
   fullName: string;
   email: string;
+  phone: string;
+  whatsapp?: string;
   ministry: string;
   designation: string;
+  attendanceMode: "in_person" | "online";
   desire: string;
   submittedAt: string;
-}): Promise<void> {
+};
+
+/** Write the registration to Supabase as first-class columns. Throws on failure. */
+async function saveToSupabase(data: Registration): Promise<void> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn("[supabase] SUPABASE_URL or SUPABASE_ANON_KEY not set — skipping DB write");
-    return;
-  }
-
+  // Caller guarantees these are set (env health check runs first).
   const payload = {
     full_name: data.fullName,
     email: data.email,
-    type: "ilpc_2026_registration",
+    phone: data.phone,
+    whatsapp: data.whatsapp || null,
+    ministry: data.ministry,
+    designation: data.designation,
+    attendance_mode: data.attendanceMode,
+    desire: data.desire,
+    source: "mta2026",
     status: "new",
-    // Pack extra fields into message as structured JSON
-    message: JSON.stringify({
-      ministry: data.ministry,
-      designation: data.designation,
-      desire: data.desire,
-      submitted_at: data.submittedAt,
-    }),
+    created_at: data.submittedAt,
   };
 
-  const resp = await fetch(`${supabaseUrl}/rest/v1/inquiries`, {
+  const resp = await fetch(`${supabaseUrl}/rest/v1/${REG_TABLE}`, {
     method: "POST",
     headers: {
-      apikey: supabaseKey,
+      apikey: supabaseKey as string,
       Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json",
       Prefer: "return=minimal",
@@ -48,69 +54,119 @@ async function saveToSupabase(data: {
 
   if (!resp.ok) {
     const body = await resp.text();
-    console.error(`[supabase] Insert failed (${resp.status}): ${body}`);
-  } else {
-    console.log(`[supabase] Registration saved for ${data.email}`);
+    throw new Error(`Supabase insert failed (${resp.status}): ${body}`);
   }
 }
+
+const attendanceLabel = (m: string) =>
+  m === "in_person" ? "In person — Akute, Nigeria" : m === "online" ? "Online" : m;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { fullName, email, ministry, designation, desire } = req.body;
+  // ── Loud env health check — never fail silently with a 500 ──
+  const missing = [
+    ["RESEND_API_KEY", process.env.RESEND_API_KEY],
+    ["SUPABASE_URL", process.env.SUPABASE_URL],
+    ["SUPABASE_ANON_KEY", process.env.SUPABASE_ANON_KEY],
+  ]
+    .filter(([, v]) => !v)
+    .map(([k]) => k as string);
 
-  if (!fullName || !email || !ministry || !designation || !desire) {
+  if (missing.length > 0) {
+    console.error(
+      `[register] MISCONFIGURED — missing env vars: ${missing.join(", ")}. ` +
+        `Registration cannot be captured until these are set in Vercel.`
+    );
+    return res.status(503).json({
+      error: "Registration is temporarily unavailable (server not configured).",
+      missing_env: missing, // names only — never values
+    });
+  }
+
+  const { fullName, email, phone, whatsapp, ministry, designation, attendanceMode, desire } =
+    req.body ?? {};
+
+  if (!fullName || !email || !phone || !ministry || !designation || !attendanceMode || !desire) {
     return res.status(400).json({ error: "Missing required fields" });
+  }
+  if (attendanceMode !== "in_person" && attendanceMode !== "online") {
+    return res.status(400).json({ error: "Invalid attendance_mode" });
   }
 
   const submittedAt = new Date().toISOString();
+  const reg: Registration = {
+    fullName,
+    email,
+    phone,
+    whatsapp,
+    ministry,
+    designation,
+    attendanceMode,
+    desire,
+    submittedAt,
+  };
 
-  // 1. Persist to Supabase (non-blocking — never fails the request)
-  saveToSupabase({ fullName, email, ministry, designation, desire, submittedAt }).catch(
-    (err) => console.error("[supabase] Unexpected error:", err)
-  );
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
+  // ── 1. Authoritative DB write (system of record) ──
+  let dbFailed = false;
+  let dbError = "";
   try {
-    // 2. Notify admin
+    await saveToSupabase(reg);
+  } catch (err) {
+    dbFailed = true;
+    dbError = err instanceof Error ? err.message : String(err);
+    console.error(`[register] DB write FAILED for ${email}: ${dbError}`);
+  }
+
+  // ── 2. Emails (admin notify + registrant auto-reply). Admin email is the
+  //       safety net if the DB write failed, so nothing is lost silently. ──
+  let emailSent = false;
+  try {
     await resend.emails.send({
       from: FROM,
       to: ADMIN_EMAIL,
-      subject: `New ILPC 2026 Registration — ${fullName}`,
+      subject: `${dbFailed ? "[DB WRITE FAILED] " : ""}New ${EVENT_NAME} Registration — ${fullName}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#1A0533;color:#fff;padding:32px;border-radius:12px;">
-          <h2 style="color:#C9972A;margin-bottom:24px;">New Registration — ILPC 2026</h2>
+          <h2 style="color:#C9972A;margin-bottom:24px;">New Registration — ${EVENT_NAME}</h2>
+          ${dbFailed ? `<p style="background:#5a1111;color:#ffd7d7;padding:10px 14px;border-radius:8px;font-size:13px;">⚠️ Database write failed — this record exists ONLY in this email. Add it manually. Error: ${dbError}</p>` : ""}
           <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;width:140px;">Full Name</td><td style="padding:8px 0;font-weight:bold;">${fullName}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;width:150px;">Full Name</td><td style="padding:8px 0;font-weight:bold;">${fullName}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Email</td><td style="padding:8px 0;">${email}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Phone</td><td style="padding:8px 0;">${phone}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">WhatsApp</td><td style="padding:8px 0;">${whatsapp || "—"}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Ministry</td><td style="padding:8px 0;">${ministry}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Designation</td><td style="padding:8px 0;">${designation}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Attendance</td><td style="padding:8px 0;">${attendanceLabel(attendanceMode)}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;vertical-align:top;">Desire</td><td style="padding:8px 0;">${desire}</td></tr>
           </table>
         </div>
       `,
     });
 
-    // 3. Auto-reply to registrant
     await resend.emails.send({
       from: FROM,
       to: email,
-      subject: "ILPC 2026 — Registration Confirmed!",
+      subject: `${EVENT_NAME} — Registration Confirmed!`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#1A0533;color:#fff;padding:32px;border-radius:12px;">
           <div style="text-align:center;margin-bottom:28px;">
-            <h1 style="color:#C9972A;font-size:28px;margin:0;">ILPC 2026</h1>
-            <p style="color:#B88FC7;font-size:13px;margin:4px 0 0;">Fresh Oil for a New Season</p>
+            <h1 style="color:#C9972A;font-size:28px;margin:0;">${EVENT_NAME}</h1>
+            <p style="color:#B88FC7;font-size:13px;margin:4px 0 0;">${EVENT_TAGLINE}</p>
           </div>
           <p style="font-size:16px;">Dear <strong style="color:#C9972A;">${fullName}</strong>,</p>
           <p style="color:#ccc;line-height:1.7;">
-            Thank you for registering for <strong>ILPC 2026 — Fresh Oil for a New Season</strong>!
+            Thank you for registering for <strong>${EVENT_NAME}</strong>!
             Your registration has been received and your place is secured.
           </p>
           <div style="background:rgba(201,151,42,0.1);border:1px solid rgba(201,151,42,0.3);border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
-            <p style="margin:0;color:#C9972A;font-weight:bold;font-size:18px;">June 5–7, 2026</p>
-            <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">HBG Ministry, Akute, Nigeria</p>
+            <p style="margin:0;color:#C9972A;font-weight:bold;font-size:18px;">${EVENT_DATES}</p>
+            <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">${EVENT_LOCATION}</p>
+            <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(attendanceMode)}</strong></p>
           </div>
           <p style="color:#ccc;line-height:1.7;">
             Come expecting a fresh encounter with God. We will be in touch with more details as the conference approaches.
@@ -121,10 +177,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </div>
       `,
     });
-
-    return res.status(200).json({ success: true });
+    emailSent = true;
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to send confirmation emails" });
+    console.error(`[register] Email send failed for ${email}:`, err);
   }
+
+  // ── 3. Respond. 200 ONLY when the row persisted. ──
+  if (!dbFailed) {
+    return res.status(200).json({ success: true, email_sent: emailSent });
+  }
+  // Row did not persist — email is the fallback capture. Surface db_failed loudly.
+  if (emailSent) {
+    return res.status(502).json({
+      success: false,
+      db_failed: true,
+      email_sent: true,
+      message:
+        "Your details reached the MTA team by email but our database is temporarily unavailable. We will confirm your spot shortly.",
+    });
+  }
+  return res.status(500).json({ success: false, db_failed: true, email_sent: false });
 }
