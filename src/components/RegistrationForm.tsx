@@ -7,12 +7,21 @@ const designations = [
   "Church Leader", "Minister", "Missionary", "Christian Worker", "Other",
 ];
 
+const inputStyle = { background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" };
+const inputClass =
+  "w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50";
+const labelClass =
+  "block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5";
+
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phone: "",
+    whatsapp: "",
     ministry: "",
     designation: "",
+    attendanceMode: "",
     desire: "",
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -25,6 +34,10 @@ const RegistrationForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.attendanceMode) {
+      setStatus("error");
+      return;
+    }
     setStatus("submitting");
     try {
       const res = await fetch("/api/register", {
@@ -58,9 +71,13 @@ const RegistrationForm = () => {
           <h3 className="text-2xl font-bold text-white mb-2">Registration Complete!</h3>
           <p className="text-[#B88FC7] text-sm leading-relaxed mb-2">
             Thank you, <span className="text-[#C9972A] font-semibold">{formData.fullName}</span>!
-            Your registration for MTA 2026 has been received.
+            Your registration for MTA 2026 — EXPLOITS has been received.
           </p>
           <p className="text-white/60 text-xs leading-relaxed">
+            You registered to attend{" "}
+            <span className="text-white/80">
+              {formData.attendanceMode === "online" ? "Online" : "In person — Akute, Nigeria"}
+            </span>.<br />
             A confirmation email is on its way to <span className="text-white/80">{formData.email}</span>.<br />
             <span className="text-[#C9972A]">Come expecting a fresh encounter with God.</span>
           </p>
@@ -91,64 +108,83 @@ const RegistrationForm = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              Full Name
-            </label>
+            <label className={labelClass}>Full Name</label>
             <input
-              type="text"
-              name="fullName"
-              required
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50"
-              style={{ background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" }}
+              type="text" name="fullName" required value={formData.fullName}
+              onChange={handleChange} placeholder="Enter your full name"
+              className={inputClass} style={inputStyle}
             />
           </div>
 
           <div>
-            <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              Email Address
-            </label>
+            <label className={labelClass}>Email Address</label>
             <input
-              type="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50"
-              style={{ background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" }}
+              type="email" name="email" required value={formData.email}
+              onChange={handleChange} placeholder="you@example.com"
+              className={inputClass} style={inputStyle}
             />
           </div>
 
           <div>
-            <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              Ministry / Church
-            </label>
+            <label className={labelClass}>Phone Number</label>
             <input
-              type="text"
-              name="ministry"
-              required
-              value={formData.ministry}
-              onChange={handleChange}
-              placeholder="Your ministry or church name"
-              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50"
-              style={{ background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" }}
+              type="tel" name="phone" required value={formData.phone}
+              onChange={handleChange} placeholder="+234 800 000 0000"
+              className={inputClass} style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>WhatsApp Number <span className="text-white/30 normal-case">(optional)</span></label>
+            <input
+              type="tel" name="whatsapp" value={formData.whatsapp}
+              onChange={handleChange} placeholder="If different from phone"
+              className={inputClass} style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>How will you attend?</label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "in_person", label: "In person", sub: "Akute, Nigeria" },
+                { value: "online", label: "Online", sub: "Livestream" },
+              ].map((opt) => {
+                const active = formData.attendanceMode === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => setFormData({ ...formData, attendanceMode: opt.value })}
+                    className="rounded-xl px-4 py-3 text-left transition-all duration-300"
+                    style={{
+                      background: active ? "rgba(201,151,42,0.18)" : "rgba(155,114,170,0.1)",
+                      border: active ? "1px solid rgba(201,151,42,0.6)" : "1px solid rgba(155,114,170,0.2)",
+                    }}
+                  >
+                    <span className="block text-sm font-semibold text-white">{opt.label}</span>
+                    <span className="block text-[11px] text-white/40">{opt.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Ministry / Church</label>
+            <input
+              type="text" name="ministry" required value={formData.ministry}
+              onChange={handleChange} placeholder="Your ministry or church name"
+              className={inputClass} style={inputStyle}
             />
           </div>
 
           <div className="relative">
-            <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              Designation
-            </label>
+            <label className={labelClass}>Designation</label>
             <div className="relative">
               <select
-                name="designation"
-                required
-                value={formData.designation}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none appearance-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50 cursor-pointer"
+                name="designation" required value={formData.designation} onChange={handleChange}
+                className={`${inputClass} appearance-none cursor-pointer`}
                 style={{ background: "rgba(45,10,78,0.9)", border: "1px solid rgba(155,114,170,0.2)" }}
               >
                 <option value="" disabled style={{ background: "#2D0A4E", color: "#B88FC7" }}>
@@ -165,25 +201,20 @@ const RegistrationForm = () => {
           </div>
 
           <div>
-            <label className="block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5">
-              What do you desire from MTA 2026?
-            </label>
+            <label className={labelClass}>What do you desire from MTA 2026?</label>
             <textarea
-              name="desire"
-              required
-              value={formData.desire}
-              onChange={handleChange}
-              placeholder="Share your expectation or prayer request..."
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50 resize-none"
-              style={{ background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" }}
+              name="desire" required value={formData.desire} onChange={handleChange}
+              placeholder="Share your expectation or prayer request..." rows={3}
+              className={`${inputClass} resize-none`} style={inputStyle}
             />
           </div>
         </div>
 
         {status === "error" && (
           <p className="text-red-400 text-xs text-center mt-3">
-            Something went wrong. Please try again.
+            {!formData.attendanceMode
+              ? "Please choose how you'll attend (in person or online)."
+              : "Something went wrong. Please try again."}
           </p>
         )}
 
