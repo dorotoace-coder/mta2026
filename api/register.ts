@@ -26,6 +26,7 @@ type Registration = {
 async function saveToSupabase(data: Registration): Promise<void> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  const isPreview = process.env.VERCEL_ENV === "preview";
   // Caller guarantees these are set (env health check runs first).
   const payload = {
     full_name: data.fullName,
@@ -54,6 +55,29 @@ async function saveToSupabase(data: Registration): Promise<void> {
 
   if (!resp.ok) {
     const body = await resp.text();
+    if (isPreview) {
+      console.error(
+        "[register] SUPABASE_INSERT_DIAGNOSTIC",
+        JSON.stringify(
+          {
+            supabase_url_host: (() => {
+              try {
+                return new URL(supabaseUrl as string).host;
+              } catch {
+                return "invalid-url";
+              }
+            })(),
+            table: REG_TABLE,
+            payload_keys: Object.keys(payload),
+            attendance_mode: data.attendanceMode,
+            response_status: resp.status,
+            response_body: body,
+          },
+          null,
+          2
+        )
+      );
+    }
     throw new Error(`Supabase insert failed (${resp.status}): ${body}`);
   }
 }
@@ -188,12 +212,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   // Row did not persist — email is the fallback capture. Surface db_failed loudly.
   if (emailSent) {
+    const previewDiagnostics =
+      process.env.VERCEL_ENV === "preview"
+        ? {
+            supabase_url: process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).host : null,
+            payload_keys: ["full_name", "email", "phone", "whatsapp", "ministry", "designation", "attendance_mode", "desire", "source", "status", "created_at"],
+            attendance_mode: attendanceMode,
+            db_error: dbError,
+          }
+        : undefined;
+
     return res.status(502).json({
       success: false,
       db_failed: true,
       email_sent: true,
       message:
         "Your details reached the MTA team by email but our database is temporarily unavailable. We will confirm your spot shortly.",
+      ...(previewDiagnostics ? { preview_diagnostics: previewDiagnostics } : {}),
     });
   }
   return res.status(500).json({ success: false, db_failed: true, email_sent: false });
