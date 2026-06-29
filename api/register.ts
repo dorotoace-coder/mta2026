@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
+import QRCode from "qrcode";
 
 // ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
@@ -143,7 +144,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const submittedAt = new Date().toISOString();
   const registrationId = randomUUID();
   const checkInUrl = `${getAppOrigin()}/checkin/${registrationId}`;
-  const qrImageUrl = `${getAppOrigin()}/api/qr/${registrationId}.png`;
   const reg: Registration = {
     id: registrationId,
     fullName,
@@ -174,6 +174,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //       safety net if the DB write failed, so nothing is lost silently. ──
   let emailSent = false;
   try {
+    const qrPng = await QRCode.toBuffer(checkInUrl, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 480,
+      color: {
+        dark: "#1A0533",
+        light: "#FFFFFF",
+      },
+    });
+
     await resend.emails.send({
       from: FROM,
       to: ADMIN_EMAIL,
@@ -200,6 +210,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from: FROM,
       to: email,
       subject: `${EVENT_NAME} — Registration Confirmed!`,
+      attachments: [
+        {
+          filename: "mta-checkin-qr.png",
+          content: qrPng,
+          content_type: "image/png",
+          content_id: "mta-checkin-qr",
+        },
+      ],
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#1A0533;color:#fff;padding:32px;border-radius:12px;">
           <div style="text-align:center;margin-bottom:28px;">
@@ -218,7 +236,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <div style="margin:24px 0 8px;text-align:center;">
             <p style="margin:0 0 10px;color:#C9972A;font-size:14px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Check-in QR</p>
-            <img src="${qrImageUrl}" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
+            <img src="cid:mta-checkin-qr" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
             <p style="margin:0;color:#B88FC7;font-size:12px;word-break:break-all;">${checkInUrl}</p>
           </div>
           <p style="color:#ccc;line-height:1.7;">
