@@ -2,9 +2,12 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import QRCode from "qrcode";
 
 const getAppOrigin = () => {
-  const deploymentHost =
-    process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const configuredBaseUrl = process.env.MTA_PUBLIC_BASE_URL;
+  if (configuredBaseUrl) return configuredBaseUrl.replace(/\/+$/, "");
+
+  const deploymentHost = process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL;
   if (deploymentHost) return `https://${deploymentHost}`;
+
   return "https://mta.heartbeatofgod.ca";
 };
 

@@ -29,10 +29,17 @@ const safeKeyDiagnostics = (value: string | undefined) => ({
 });
 
 const getAppOrigin = () => {
-  const deploymentHost =
-    process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const configuredBaseUrl = process.env.MTA_PUBLIC_BASE_URL;
+  if (configuredBaseUrl) return configuredBaseUrl.replace(/\/+$/, "");
+
+  if (process.env.VERCEL_ENV === "production") {
+    throw new Error("Missing MTA_PUBLIC_BASE_URL for production registration emails");
+  }
+
+  const deploymentHost = process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL;
   if (deploymentHost) return `https://${deploymentHost}`;
-  return "https://mta.heartbeatofgod.ca";
+
+  throw new Error("Missing public base URL for registration emails");
 };
 
 type Registration = {
@@ -117,6 +124,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ["RESEND_API_KEY", process.env.RESEND_API_KEY],
     ["SUPABASE_URL", process.env.SUPABASE_URL],
     ["SUPABASE_ANON_KEY", process.env.SUPABASE_ANON_KEY],
+    ...(process.env.VERCEL_ENV === "production"
+      ? [["MTA_PUBLIC_BASE_URL", process.env.MTA_PUBLIC_BASE_URL]]
+      : []),
   ]
     .filter(([, v]) => !v)
     .map(([k]) => k as string);
