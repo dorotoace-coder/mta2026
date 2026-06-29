@@ -28,7 +28,7 @@ const CheckIn = () => {
 
   const lookupUrl = useMemo(() => {
     if (!id) return null;
-    return `/api/checkin/${encodeURIComponent(id)}`;
+    return `/api/checkin?id=${encodeURIComponent(id)}`;
   }, [id]);
 
   useEffect(() => {
