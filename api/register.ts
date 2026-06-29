@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { randomUUID } from "crypto";
 import { Resend } from "resend";
+import QRCode from "qrcode";
 
 // ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
@@ -26,6 +28,7 @@ const safeKeyDiagnostics = (value: string | undefined) => ({
 });
 
 type Registration = {
+  id: string;
   fullName: string;
   email: string;
   phone: string;
@@ -44,6 +47,7 @@ async function saveToSupabase(data: Registration): Promise<void> {
   const isPreview = process.env.VERCEL_ENV === "preview";
   // Caller guarantees these are set (env health check runs first).
   const payload = {
+    id: data.id,
     full_name: data.fullName,
     email: data.email,
     phone: data.phone,
@@ -131,7 +135,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const submittedAt = new Date().toISOString();
+  const registrationId = randomUUID();
+  const checkInUrl = `https://mta.heartbeatofgod.ca/checkin/${registrationId}`;
   const reg: Registration = {
+    id: registrationId,
     fullName,
     email,
     phone,
@@ -160,6 +167,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //       safety net if the DB write failed, so nothing is lost silently. ──
   let emailSent = false;
   try {
+    const qrDataUrl = await QRCode.toDataURL(checkInUrl, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 320,
+      color: {
+        dark: "#1A0533",
+        light: "#FFFFFF",
+      },
+    });
+
     await resend.emails.send({
       from: FROM,
       to: ADMIN_EMAIL,
@@ -201,6 +218,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <p style="margin:0;color:#C9972A;font-weight:bold;font-size:18px;">${EVENT_DATES}</p>
             <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">${EVENT_LOCATION}</p>
             <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(attendanceMode)}</strong></p>
+          </div>
+          <div style="margin:24px 0 8px;text-align:center;">
+            <p style="margin:0 0 10px;color:#C9972A;font-size:14px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Check-in QR</p>
+            <img src="${qrDataUrl}" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
+            <p style="margin:0;color:#B88FC7;font-size:12px;word-break:break-all;">${checkInUrl}</p>
           </div>
           <p style="color:#ccc;line-height:1.7;">
             Come expecting a fresh encounter with God. We will be in touch with more details as the conference approaches.
