@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
-import QRCode from "qrcode";
 
 // ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
@@ -26,6 +25,13 @@ const safeKeyDiagnostics = (value: string | undefined) => ({
   length: value?.length ?? 0,
   prefix6: value ? value.slice(0, 6) : null,
 });
+
+const getAppOrigin = () => {
+  const deploymentHost =
+    process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (deploymentHost) return `https://${deploymentHost}`;
+  return "https://mta.heartbeatofgod.ca";
+};
 
 type Registration = {
   id: string;
@@ -136,7 +142,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const submittedAt = new Date().toISOString();
   const registrationId = randomUUID();
-  const checkInUrl = `https://mta.heartbeatofgod.ca/checkin/${registrationId}`;
+  const checkInUrl = `${getAppOrigin()}/checkin/${registrationId}`;
+  const qrImageUrl = `${getAppOrigin()}/api/qr/${registrationId}.png`;
   const reg: Registration = {
     id: registrationId,
     fullName,
@@ -167,16 +174,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //       safety net if the DB write failed, so nothing is lost silently. ──
   let emailSent = false;
   try {
-    const qrDataUrl = await QRCode.toDataURL(checkInUrl, {
-      errorCorrectionLevel: "M",
-      margin: 1,
-      width: 320,
-      color: {
-        dark: "#1A0533",
-        light: "#FFFFFF",
-      },
-    });
-
     await resend.emails.send({
       from: FROM,
       to: ADMIN_EMAIL,
@@ -221,7 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <div style="margin:24px 0 8px;text-align:center;">
             <p style="margin:0 0 10px;color:#C9972A;font-size:14px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Check-in QR</p>
-            <img src="${qrDataUrl}" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
+            <img src="${qrImageUrl}" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
             <p style="margin:0;color:#B88FC7;font-size:12px;word-break:break-all;">${checkInUrl}</p>
           </div>
           <p style="color:#ccc;line-height:1.7;">
