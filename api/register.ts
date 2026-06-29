@@ -11,6 +11,7 @@ const EVENT_TAGLINE = "Mighty Turn Around Assembly";
 const EVENT_DATES = "September 4–6, 2026";
 const EVENT_LOCATION = "HBG Ministry, Akute, Nigeria & Online";
 const REG_TABLE = "mta_registrations";
+const CHECKIN_QR_CONTENT_ID = "mta-checkin-qr@hbg";
 
 const safeSupabaseHost = (value: string | undefined): string | null => {
   if (!value) return null;
@@ -214,8 +215,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         {
           filename: "mta-checkin-qr.png",
           content: qrPng,
-          content_type: "image/png",
-          content_id: "mta-checkin-qr",
+          contentType: "image/png",
+          contentId: CHECKIN_QR_CONTENT_ID,
         },
       ],
       html: `
@@ -236,7 +237,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <div style="margin:24px 0 8px;text-align:center;">
             <p style="margin:0 0 10px;color:#C9972A;font-size:14px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Check-in QR</p>
-            <img src="cid:mta-checkin-qr" alt="QR code for ${checkInUrl}" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
+            <img src="cid:${CHECKIN_QR_CONTENT_ID}" alt="MTA 2026 check-in QR" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
             <p style="margin:0;color:#B88FC7;font-size:12px;word-break:break-all;">${checkInUrl}</p>
           </div>
           <p style="color:#ccc;line-height:1.7;">
