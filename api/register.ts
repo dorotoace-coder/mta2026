@@ -245,6 +245,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">${EVENT_LOCATION}</p>
             <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(attendanceMode)}</strong></p>
           </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(201,151,42,0.35);border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
+            <p style="margin:0 0 10px;color:#C9972A;font-size:15px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Before the Assembly — WE WAIT</p>
+            <p style="margin:0;color:#fff;font-size:16px;font-weight:bold;line-height:1.6;">Join 21 Days of Fasting & Prayer: August 13 – September 2, 2026</p>
+            <p style="margin:10px 0 0;color:#B88FC7;font-size:13px;line-height:1.6;">Corporate consecration · Intercession · Spiritual sharpening</p>
+            <p style="margin:14px 0 0;color:#ccc;font-size:14px;line-height:1.7;font-style:italic;">You don't come to MTA empty — you come loaded from 21 days in His presence.</p>
+          </div>
           <div style="margin:24px 0 8px;text-align:center;">
             <p style="margin:0 0 10px;color:#C9972A;font-size:14px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Check-in QR</p>
             <img src="cid:${CHECKIN_QR_CONTENT_ID}" alt="MTA 2026 check-in QR" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;padding:8px;border-radius:12px;" />
