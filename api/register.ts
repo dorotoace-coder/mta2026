@@ -51,8 +51,14 @@ type Registration = {
   ministry: string;
   designation: string;
   attendanceMode: "in_person" | "online";
+  fastCommitment: "yes" | "try" | "no";
   desire: string;
   submittedAt: string;
+};
+
+const normalizeFastCommitment = (value: unknown): "yes" | "try" | "no" => {
+  if (value === "yes" || value === "try" || value === "no") return value;
+  return "no";
 };
 
 /** Write the registration to Supabase as first-class columns. Throws on failure. */
@@ -70,6 +76,8 @@ async function saveToSupabase(data: Registration): Promise<void> {
     ministry: data.ministry,
     designation: data.designation,
     attendance_mode: data.attendanceMode,
+    fast_commitment: data.fastCommitment,
+    joining_fast: data.fastCommitment === "yes" || data.fastCommitment === "try",
     desire: data.desire,
     source: "mta2026",
     status: "new",
@@ -99,6 +107,7 @@ async function saveToSupabase(data: Registration): Promise<void> {
             table: REG_TABLE,
             payload_keys: Object.keys(payload),
             attendance_mode: data.attendanceMode,
+            fast_commitment: data.fastCommitment,
             response_status: resp.status,
             response_body: body,
           },
@@ -142,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { fullName, email, phone, whatsapp, ministry, designation, attendanceMode, desire } =
+  const { fullName, email, phone, whatsapp, ministry, designation, attendanceMode, fastCommitment, desire } =
     req.body ?? {};
 
   if (!fullName || !email || !phone || !ministry || !designation || !attendanceMode || !desire) {
@@ -151,6 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (attendanceMode !== "in_person" && attendanceMode !== "online") {
     return res.status(400).json({ error: "Invalid attendance_mode" });
   }
+  const normalizedFastCommitment = normalizeFastCommitment(fastCommitment);
 
   const submittedAt = new Date().toISOString();
   const registrationId = randomUUID();
@@ -164,6 +174,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ministry,
     designation,
     attendanceMode,
+    fastCommitment: normalizedFastCommitment,
     desire,
     submittedAt,
   };
@@ -211,6 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Ministry</td><td style="padding:8px 0;">${ministry}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Designation</td><td style="padding:8px 0;">${designation}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Attendance</td><td style="padding:8px 0;">${attendanceLabel(attendanceMode)}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Fast Commitment</td><td style="padding:8px 0;">${normalizedFastCommitment}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;vertical-align:top;">Desire</td><td style="padding:8px 0;">${desire}</td></tr>
           </table>
         </div>
@@ -283,8 +295,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? {
             supabase_url_host: safeSupabaseHost(process.env.SUPABASE_URL),
             supabase_anon_key: safeKeyDiagnostics(process.env.SUPABASE_ANON_KEY),
-            payload_keys: ["full_name", "email", "phone", "whatsapp", "ministry", "designation", "attendance_mode", "desire", "source", "status", "created_at"],
+            payload_keys: ["full_name", "email", "phone", "whatsapp", "ministry", "designation", "attendance_mode", "fast_commitment", "joining_fast", "desire", "source", "status", "created_at"],
             attendance_mode: attendanceMode,
+            fast_commitment: normalizedFastCommitment,
             db_error: dbError,
           }
         : undefined;

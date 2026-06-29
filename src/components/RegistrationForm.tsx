@@ -13,6 +13,12 @@ const inputClass =
 const labelClass =
   "block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5";
 
+const fastOptions = [
+  { value: "yes", label: "Yes, I will join", sub: "21 days of fasting & prayer" },
+  { value: "try", label: "I will try / partially join", sub: "Join as grace enables" },
+  { value: "no", label: "Not this time", sub: "Still receive your MTA registration" },
+];
+
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -22,6 +28,7 @@ const RegistrationForm = () => {
     ministry: "",
     designation: "",
     attendanceMode: "",
+    fastCommitment: "no",
     desire: "",
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -77,6 +84,13 @@ const RegistrationForm = () => {
             You registered to attend{" "}
             <span className="text-white/80">
               {formData.attendanceMode === "online" ? "Online" : "In person — Akute, Nigeria"}
+            </span>.<br />
+            Fast commitment: <span className="text-white/80">
+              {formData.fastCommitment === "yes"
+                ? "Yes, I will join"
+                : formData.fastCommitment === "try"
+                  ? "I will try / partially join"
+                  : "Not this time"}
             </span>.<br />
             A confirmation email is on its way to <span className="text-white/80">{formData.email}</span>.<br />
             <span className="text-[#C9972A]">Come expecting a fresh encounter with God.</span>
@@ -157,6 +171,30 @@ const RegistrationForm = () => {
                     key={opt.value}
                     onClick={() => setFormData({ ...formData, attendanceMode: opt.value })}
                     className="rounded-xl px-4 py-3 text-left transition-all duration-300"
+                    style={{
+                      background: active ? "rgba(201,151,42,0.18)" : "rgba(155,114,170,0.1)",
+                      border: active ? "1px solid rgba(201,151,42,0.6)" : "1px solid rgba(155,114,170,0.2)",
+                    }}
+                  >
+                    <span className="block text-sm font-semibold text-white">{opt.label}</span>
+                    <span className="block text-[11px] text-white/40">{opt.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Will you join the 21 Days of Fasting & Prayer?</label>
+            <div className="space-y-2">
+              {fastOptions.map((opt) => {
+                const active = formData.fastCommitment === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => setFormData({ ...formData, fastCommitment: opt.value })}
+                    className="w-full rounded-xl px-4 py-3 text-left transition-all duration-300"
                     style={{
                       background: active ? "rgba(201,151,42,0.18)" : "rgba(155,114,170,0.1)",
                       border: active ? "1px solid rgba(201,151,42,0.6)" : "1px solid rgba(155,114,170,0.2)",
