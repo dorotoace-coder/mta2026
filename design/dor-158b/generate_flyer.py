@@ -10,10 +10,11 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(OUT, "..", ".."))
 LOGO_PATH = os.path.join(ROOT, "public", "hbg-logo.svg")
 
-# ── Brand system ───────────────────────────────────────────────
-PLUM_TOP  = "#0C0220"; PURPLE_MID = "#2A0A52"; PURPLE = "#1A0533"
-GOLD = "#C9972A"; GOLD_LT = "#E8C96A"; LILAC = "#B88FC7"
-WHITE = "#FFFFFF"; OFFWHITE = "#F3E9C9"; PLUM_DEEP = "#070114"
+# ── Premium MTA site visual system (DOR-160C) ───────────────────
+NAVY = "#050816"; DEEP_BLUE = "#07142B"; ROYAL = "#0B1F4D"
+INDIGO = "#19104A"; VIOLET = "#442A85"; SOFT_VIOLET = "#7E73FF"
+GOLD = "#D7B767"; GOLD_LT = "#F3DF9B"; LILAC = "#C8B7FF"
+WHITE = "#FFFFFF"; OFFWHITE = "#F4F7FF"; BLUE_DEEP = "#030615"
 
 KICKER = "MIGHTY TURN AROUND ASSEMBLY   ·   PRESENTS"
 TITLE  = "MTA 2026"
@@ -44,11 +45,11 @@ def txt(x, y, s, size, fill, family=SANS, weight="normal", spacing=0,
             f'{ls}{fs} opacity="{opacity}">{s}</text>')
 
 def hero_3d(cx, y, size):
-    """3D extruded gold EXPLOITS: dark plum extrude + gold face + top highlight."""
+    """Premium dimensional gold EXPLOITS: deep blue extrude + gold face + silver highlight."""
     layers = []
     for d in range(14, 0, -2):  # extrude depth
         layers.append(f'<text x="{cx}" y="{y+d}" font-family="{SANS}" '
-                      f'font-size="{size}" font-weight="bold" fill="{PLUM_DEEP}" '
+                      f'font-size="{size}" font-weight="bold" fill="{BLUE_DEEP}" '
                       f'text-anchor="middle" letter-spacing="6">{HERO}</text>')
     face = (f'<text x="{cx}" y="{y}" font-family="{SANS}" font-size="{size}" '
             f'font-weight="bold" fill="url(#goldgrad)" text-anchor="middle" '
@@ -81,13 +82,13 @@ def ribbon(path, grad, w):
 def defs(W, H):
     return f'''<defs>
   <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="{PLUM_TOP}"/>
-    <stop offset="0.5" stop-color="{PURPLE_MID}"/>
-    <stop offset="1" stop-color="{PURPLE}"/>
+    <stop offset="0" stop-color="{NAVY}"/>
+    <stop offset="0.42" stop-color="{ROYAL}"/>
+    <stop offset="1" stop-color="{INDIGO}"/>
   </linearGradient>
   <radialGradient id="halo" cx="0.5" cy="0.40" r="0.55">
-    <stop offset="0" stop-color="{GOLD}" stop-opacity="0.40"/>
-    <stop offset="0.4" stop-color="{GOLD}" stop-opacity="0.12"/>
+    <stop offset="0" stop-color="{SOFT_VIOLET}" stop-opacity="0.36"/>
+    <stop offset="0.42" stop-color="{GOLD}" stop-opacity="0.14"/>
     <stop offset="1" stop-color="{GOLD}" stop-opacity="0"/>
   </radialGradient>
   <radialGradient id="vig" cx="0.5" cy="0.5" r="0.75">
@@ -97,16 +98,16 @@ def defs(W, H):
   <linearGradient id="goldgrad" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="{GOLD_LT}"/>
     <stop offset="0.5" stop-color="{GOLD}"/>
-    <stop offset="1" stop-color="#9A7320"/>
+    <stop offset="1" stop-color="#B89139"/>
   </linearGradient>
-  <linearGradient id="ng" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#1F7A3D"/><stop offset="0.5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#1F7A3D"/>
+  <linearGradient id="beamBlue" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="{SOFT_VIOLET}" stop-opacity="0"/><stop offset="0.5" stop-color="{LILAC}" stop-opacity="0.52"/><stop offset="1" stop-color="{SOFT_VIOLET}" stop-opacity="0"/>
   </linearGradient>
-  <linearGradient id="ca" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#B33A3A"/><stop offset="0.5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#B33A3A"/>
+  <linearGradient id="beamGold" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="{GOLD}" stop-opacity="0"/><stop offset="0.5" stop-color="{GOLD_LT}" stop-opacity="0.40"/><stop offset="1" stop-color="{GOLD}" stop-opacity="0"/>
   </linearGradient>
-  <linearGradient id="de" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#161616"/><stop offset="0.5" stop-color="#B33A3A"/><stop offset="1" stop-color="{GOLD}"/>
+  <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="1" stop-color="#C8B7FF" stop-opacity="0.04"/>
   </linearGradient>
   <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
     <feGaussianBlur stdDeviation="7"/>
@@ -127,6 +128,41 @@ def beams(cx, cy):
                    f'fill="{GOLD_LT}" opacity="0.05" filter="url(#soft)"/>')
     return "".join(out)
 
+def monument(cx, base_y, scale):
+    """Subtle architectural depth borrowed from the production website mood."""
+    w = 740 * scale
+    h = 210 * scale
+    x = cx - w / 2
+    y = base_y - h
+    cols = []
+    for i in range(6):
+        c_x = x + w * (0.18 + i * 0.128)
+        cols.append(f'<rect x="{c_x}" y="{y+62*scale}" width="{26*scale}" height="{126*scale}" rx="{8*scale}" fill="url(#silver)" opacity="0.36"/>')
+    return (
+        f'<g opacity="0.42" filter="url(#soft)">'
+        f'<path d="M{x+40*scale} {y+58*scale} L{cx} {y} L{x+w-40*scale} {y+58*scale} Z" fill="url(#silver)"/>'
+        f'<rect x="{x+80*scale}" y="{y+44*scale}" width="{w-160*scale}" height="{24*scale}" rx="{12*scale}" fill="{LILAC}" opacity="0.22"/>'
+        + "".join(cols) +
+        f'<rect x="{x+55*scale}" y="{base_y-20*scale}" width="{w-110*scale}" height="{28*scale}" rx="{14*scale}" fill="{GOLD}" opacity="0.14"/>'
+        f'</g>'
+    )
+
+def worship_silhouette(W, H):
+    base = H * 0.92
+    people = []
+    for i, x in enumerate([0.12, 0.2, 0.78, 0.88]):
+        cx = W * x
+        s = 1.15 + (i % 2) * 0.18
+        people.append(
+            f'<g opacity="0.10" fill="{OFFWHITE}" filter="url(#soft)">'
+            f'<circle cx="{cx}" cy="{base-46*s}" r="{9*s}"/>'
+            f'<path d="M{cx-11*s} {base-34*s} C{cx-24*s} {base-2*s} {cx+24*s} {base-2*s} {cx+11*s} {base-34*s} Z"/>'
+            f'<path d="M{cx-10*s} {base-32*s} C{cx-34*s} {base-70*s} {cx-47*s} {base-95*s} {cx-38*s} {base-101*s}" stroke="{OFFWHITE}" stroke-width="{5*s}" fill="none" stroke-linecap="round"/>'
+            f'<path d="M{cx+10*s} {base-32*s} C{cx+34*s} {base-74*s} {cx+46*s} {base-96*s} {cx+39*s} {base-104*s}" stroke="{OFFWHITE}" stroke-width="{5*s}" fill="none" stroke-linecap="round"/>'
+            f'</g>'
+        )
+    return "".join(people)
+
 def build(fmt, W, H, L):
     cx = W/2
     s = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">']
@@ -134,13 +170,14 @@ def build(fmt, W, H, L):
     s.append(f'<rect width="{W}" height="{H}" fill="url(#bg)"/>')
     # god-ray halo + beams centered on hero
     hy = L['hero']
-    s.append(f'<ellipse cx="{cx}" cy="{hy-60}" rx="{W*0.7}" ry="{W*0.5}" fill="url(#halo)" filter="url(#glow)"/>')
+    s.append(f'<ellipse cx="{cx}" cy="{hy-58}" rx="{W*0.72}" ry="{W*0.48}" fill="url(#halo)" filter="url(#glow)"/>')
     s.append(beams(cx, hy-40))
-    # flag light-ribbons arcing behind the hero band
+    s.append(monument(cx, hy + L.get('monument_offset', 70), L.get('monument_scale', 0.95)))
+    # cinematic light-ribbons arcing behind the hero band
     by = hy - 110
-    s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}", "ng", 30))
-    s.append(ribbon(f"M {-60} {by+120} C {W*0.35} {by+10}, {W*0.65} {by+220}, {W+60} {by+70}", "ca", 26))
-    s.append(ribbon(f"M {-60} {by-10} C {W*0.32} {by+170}, {W*0.7} {by-80}, {W+60} {by+150}", "de", 22))
+    s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}", "beamBlue", 30))
+    s.append(ribbon(f"M {-60} {by+118} C {W*0.35} {by+8}, {W*0.65} {by+218}, {W+60} {by+68}", "beamGold", 22))
+    s.append(worship_silhouette(W, H))
     # Official HBG logo lockup.
     ly = L['lockup']
     s.append(official_logo(cx, ly, L['logo_w']))
@@ -163,7 +200,7 @@ def build(fmt, W, H, L):
     # CTA pill
     bw = W*0.5; bx = (W-bw)/2; bcy = L['cta_cy']; bh = L['cta_h']
     s.append(f'<rect x="{bx}" y="{bcy-bh/2}" width="{bw}" height="{bh}" rx="{bh/2}" fill="url(#goldgrad)"/>')
-    s.append(txt(cx, bcy+L['cta_sz']*0.35, CTA, L['cta_sz'], PURPLE, SANS, "bold", 3))
+    s.append(txt(cx, bcy+L['cta_sz']*0.35, CTA, L['cta_sz'], DEEP_BLUE, SANS, "bold", 3))
     s.append(txt(cx, L['url'], URL, L['url_sz'], WHITE, SANS, "normal", 2))
     # footer
     if 'foot' in L:
@@ -175,20 +212,20 @@ def build(fmt, W, H, L):
 
 # ── Per-format layouts (loudness: HERO > date > title > CTA > scripture) ──
 PORTRAIT = dict(lockup=92, logo_w=164, kicker=178, kicker_sz=24,
-    title=300, title_sz=78, hero=470, hero_sz=205, scr_sz=34,
+    title=300, title_sz=78, hero=470, hero_sz=192, scr_sz=34,
     scr1=600, scr2=648, attr=712, attr_sz=24,
-    camp_cy=852, camp_h=132, camp1=832, camp1_sz=34, camp2=900, date_sz=70,
+    camp_cy=852, camp_h=132, camp1=832, camp1_sz=34, camp2=900, date_sz=60,
     cta_cy=1066, cta_h=92, cta_sz=40, url=1158, url_sz=30,
     foot=1290, foot_sz=20)
 SQUARE = dict(lockup=86, logo_w=154, kicker=158, kicker_sz=22,
-    title=256, title_sz=66, hero=398, hero_sz=180, scr_sz=30,
+    title=256, title_sz=66, hero=398, hero_sz=168, scr_sz=30,
     scr1=510, scr2=552, attr=606, attr_sz=22,
-    camp_cy=724, camp_h=120, camp1=706, camp1_sz=30, camp2=766, date_sz=60,
+    camp_cy=724, camp_h=120, camp1=706, camp1_sz=30, camp2=766, date_sz=54,
     cta_cy=908, cta_h=84, cta_sz=36, url=988, url_sz=27)
 STORY = dict(lockup=250, logo_w=178, kicker=350, kicker_sz=25,
-    title=530, title_sz=82, hero=742, hero_sz=205, scr_sz=37,
+    title=530, title_sz=82, hero=742, hero_sz=192, scr_sz=37,
     scr1=905, scr2=960, attr=1032, attr_sz=26,
-    camp_cy=1200, camp_h=150, camp1=1178, camp1_sz=37, camp2=1254, date_sz=70,
+    camp_cy=1200, camp_h=150, camp1=1178, camp1_sz=37, camp2=1254, date_sz=60,
     cta_cy=1452, cta_h=104, cta_sz=46, url=1556, url_sz=34,
     foot=1640, foot_sz=23)
 

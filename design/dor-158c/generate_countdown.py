@@ -10,9 +10,10 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(OUT, "..", ".."))
 LOGO_PATH = os.path.join(ROOT, "public", "hbg-logo.svg")
 
-PLUM_TOP="#0C0220"; PURPLE_MID="#2A0A52"; PURPLE="#1A0533"
-GOLD="#C9972A"; GOLD_LT="#E8C96A"; LILAC="#B88FC7"
-WHITE="#FFFFFF"; OFFWHITE="#F3E9C9"; PLUM_DEEP="#070114"
+NAVY="#050816"; DEEP_BLUE="#07142B"; ROYAL="#0B1F4D"
+INDIGO="#19104A"; VIOLET="#442A85"; SOFT_VIOLET="#7E73FF"
+GOLD="#D7B767"; GOLD_LT="#F3DF9B"; LILAC="#C8B7FF"
+WHITE="#FFFFFF"; OFFWHITE="#F4F7FF"; BLUE_DEEP="#030615"
 
 SANS="Futura, 'Helvetica Neue', Helvetica, sans-serif"
 SERIF_B="Baskerville, Georgia, serif"
@@ -31,20 +32,20 @@ def txt(x,y,s,size,fill,family=SANS,weight="normal",spacing=0,anchor="middle",st
 def defs():
     return f'''<defs>
   <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="{PLUM_TOP}"/><stop offset="0.5" stop-color="{PURPLE_MID}"/><stop offset="1" stop-color="{PURPLE}"/>
+    <stop offset="0" stop-color="{NAVY}"/><stop offset="0.45" stop-color="{ROYAL}"/><stop offset="1" stop-color="{INDIGO}"/>
   </linearGradient>
   <radialGradient id="halo" cx="0.5" cy="0.42" r="0.55">
-    <stop offset="0" stop-color="{GOLD}" stop-opacity="0.38"/><stop offset="0.4" stop-color="{GOLD}" stop-opacity="0.11"/><stop offset="1" stop-color="{GOLD}" stop-opacity="0"/>
+    <stop offset="0" stop-color="{SOFT_VIOLET}" stop-opacity="0.35"/><stop offset="0.42" stop-color="{GOLD}" stop-opacity="0.13"/><stop offset="1" stop-color="{GOLD}" stop-opacity="0"/>
   </radialGradient>
   <radialGradient id="vig" cx="0.5" cy="0.5" r="0.75">
     <stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.55"/>
   </radialGradient>
   <linearGradient id="goldgrad" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="{GOLD_LT}"/><stop offset="0.5" stop-color="{GOLD}"/><stop offset="1" stop-color="#9A7320"/>
+    <stop offset="0" stop-color="{GOLD_LT}"/><stop offset="0.5" stop-color="{GOLD}"/><stop offset="1" stop-color="#B89139"/>
   </linearGradient>
-  <linearGradient id="ng" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1F7A3D"/><stop offset="0.5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#1F7A3D"/></linearGradient>
-  <linearGradient id="ca" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B33A3A"/><stop offset="0.5" stop-color="#FFFFFF"/><stop offset="1" stop-color="#B33A3A"/></linearGradient>
-  <linearGradient id="de" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#161616"/><stop offset="0.5" stop-color="#B33A3A"/><stop offset="1" stop-color="{GOLD}"/></linearGradient>
+  <linearGradient id="beamBlue" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{SOFT_VIOLET}" stop-opacity="0"/><stop offset="0.5" stop-color="{LILAC}" stop-opacity="0.52"/><stop offset="1" stop-color="{SOFT_VIOLET}" stop-opacity="0"/></linearGradient>
+  <linearGradient id="beamGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{GOLD}" stop-opacity="0"/><stop offset="0.5" stop-color="{GOLD_LT}" stop-opacity="0.40"/><stop offset="1" stop-color="{GOLD}" stop-opacity="0"/></linearGradient>
+  <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="1" stop-color="#C8B7FF" stop-opacity="0.04"/></linearGradient>
   <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
   <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
 </defs>'''
@@ -60,7 +61,7 @@ def ribbon(path,grad,w,op):
     return f'<path d="{path}" fill="none" stroke="url(#{grad})" stroke-width="{w}" stroke-linecap="round" opacity="{op}" filter="url(#soft)"/>'
 
 def hero3d(cx,y,size):
-    out=[f'<text x="{cx}" y="{y+d}" font-family="{SANS}" font-size="{size}" font-weight="bold" fill="{PLUM_DEEP}" text-anchor="middle" letter-spacing="5">EXPLOITS</text>' for d in range(10,0,-2)]
+    out=[f'<text x="{cx}" y="{y+d}" font-family="{SANS}" font-size="{size}" font-weight="bold" fill="{BLUE_DEEP}" text-anchor="middle" letter-spacing="5">EXPLOITS</text>' for d in range(10,0,-2)]
     out.append(f'<text x="{cx}" y="{y}" font-family="{SANS}" font-size="{size}" font-weight="bold" fill="url(#goldgrad)" text-anchor="middle" letter-spacing="5">EXPLOITS</text>')
     out.append(f'<text x="{cx}" y="{y-2}" font-family="{SANS}" font-size="{size}" font-weight="bold" fill="{GOLD_LT}" text-anchor="middle" letter-spacing="5" opacity="0.35">EXPLOITS</text>')
     return "".join(out)
@@ -80,12 +81,46 @@ def official_logo(cx, cy, width):
             f'<image href="{LOGO_HREF}" x="{x}" y="{y}" width="{width}" height="{height}" '
             f'preserveAspectRatio="xMidYMid meet"/>')
 
+def monument(cx, base_y, scale):
+    w = 700 * scale
+    h = 190 * scale
+    x = cx - w / 2
+    y = base_y - h
+    cols = []
+    for i in range(6):
+        c_x = x + w * (0.18 + i * 0.128)
+        cols.append(f'<rect x="{c_x}" y="{y+58*scale}" width="{23*scale}" height="{112*scale}" rx="{7*scale}" fill="url(#silver)" opacity="0.34"/>')
+    return (
+        f'<g opacity="0.38" filter="url(#soft)">'
+        f'<path d="M{x+38*scale} {y+54*scale} L{cx} {y} L{x+w-38*scale} {y+54*scale} Z" fill="url(#silver)"/>'
+        f'<rect x="{x+76*scale}" y="{y+42*scale}" width="{w-152*scale}" height="{21*scale}" rx="{10*scale}" fill="{LILAC}" opacity="0.20"/>'
+        + "".join(cols) +
+        f'<rect x="{x+50*scale}" y="{base_y-18*scale}" width="{w-100*scale}" height="{24*scale}" rx="{12*scale}" fill="{GOLD}" opacity="0.13"/>'
+        f'</g>'
+    )
+
+def worship_silhouette(W, H):
+    base = H * 0.92
+    people = []
+    for i, x in enumerate([0.12, 0.22, 0.78, 0.88]):
+        cx = W * x
+        s = 1.12 + (i % 2) * 0.16
+        people.append(
+            f'<g opacity="0.09" fill="{OFFWHITE}" filter="url(#soft)">'
+            f'<circle cx="{cx}" cy="{base-46*s}" r="{9*s}"/>'
+            f'<path d="M{cx-11*s} {base-34*s} C{cx-24*s} {base-2*s} {cx+24*s} {base-2*s} {cx+11*s} {base-34*s} Z"/>'
+            f'<path d="M{cx-10*s} {base-32*s} C{cx-34*s} {base-70*s} {cx-47*s} {base-95*s} {cx-38*s} {base-101*s}" stroke="{OFFWHITE}" stroke-width="{5*s}" fill="none" stroke-linecap="round"/>'
+            f'<path d="M{cx+10*s} {base-32*s} C{cx+34*s} {base-74*s} {cx+46*s} {base-96*s} {cx+39*s} {base-104*s}" stroke="{OFFWHITE}" stroke-width="{5*s}" fill="none" stroke-linecap="round"/>'
+            f'</g>'
+        )
+    return "".join(people)
+
 def badge(cx,cy,label,solid,size,padx):
     w=len(label)*size*0.66+padx*2; h=size*2.0
     x=cx-w/2; y=cy-h/2
     if solid:
         rect=f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{h/2}" fill="url(#goldgrad)"/>'
-        t=txt(cx,cy+size*0.36,label,size,PURPLE,SANS,"bold",4)
+        t=txt(cx,cy+size*0.36,label,size,DEEP_BLUE,SANS,"bold",4)
     else:
         rect=f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{h/2}" fill="{WHITE}" fill-opacity="0.04" stroke="{GOLD}" stroke-width="2"/>'
         t=txt(cx,cy+size*0.36,label,size,GOLD_LT,SANS,"bold",4)
@@ -100,9 +135,10 @@ def build(W,H,L,day):
     s.append(beams(cx,hy-30))
     op=0.62 if ribboost else 0.42
     by=hy-95
-    s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}","ng",30,op))
-    s.append(ribbon(f"M {-60} {by+120} C {W*0.35} {by+10}, {W*0.65} {by+220}, {W+60} {by+70}","ca",26,op))
-    s.append(ribbon(f"M {-60} {by-10} C {W*0.32} {by+170}, {W*0.7} {by-80}, {W+60} {by+150}","de",22,op))
+    s.append(monument(cx, hy + L.get('monument_offset', 64), L.get('monument_scale', 0.88)))
+    s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}","beamBlue",30,op))
+    s.append(ribbon(f"M {-60} {by+118} C {W*0.35} {by+8}, {W*0.65} {by+218}, {W+60} {by+68}","beamGold",22,op))
+    s.append(worship_silhouette(W, H))
     # Official HBG logo lockup.
     ly=L['lockup']
     s.append(official_logo(cx, ly, L['logo_w']))
@@ -122,7 +158,7 @@ def build(W,H,L,day):
     # CTA
     bw=W*0.52; bx=(W-bw)/2; bcy=L['cta_cy']; bh=L['cta_h']
     s.append(f'<rect x="{bx}" y="{bcy-bh/2}" width="{bw}" height="{bh}" rx="{bh/2}" fill="url(#goldgrad)"/>')
-    s.append(txt(cx,bcy+L['cta_sz']*0.35,CTA,L['cta_sz'],PURPLE,SANS,"bold",3))
+    s.append(txt(cx,bcy+L['cta_sz']*0.35,CTA,L['cta_sz'],DEEP_BLUE,SANS,"bold",3))
     s.append(txt(cx,L['url'],URL,L['url_sz'],WHITE,SANS,"normal",2))
     s.append(f'<rect width="{W}" height="{H}" fill="url(#vig)"/></svg>')
     return "".join(s)
