@@ -4,9 +4,11 @@ DOR-158B — MTA2026 Master Flyer generator (design asset only; not app code).
 Authors vector SVG (crisp real text) per the DOR-158A brief, rasterizes to PNG
 via cairosvg. Three formats share one design system.
 """
-import os, cairosvg
+import base64, os, cairosvg
 
 OUT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(OUT, "..", ".."))
+LOGO_PATH = os.path.join(ROOT, "public", "hbg-logo.svg")
 
 # ── Brand system ───────────────────────────────────────────────
 PLUM_TOP  = "#0C0220"; PURPLE_MID = "#2A0A52"; PURPLE = "#1A0533"
@@ -55,6 +57,21 @@ def hero_3d(cx, y, size):
           f'font-weight="bold" fill="{GOLD_LT}" text-anchor="middle" '
           f'letter-spacing="6" opacity="0.35">{HERO}</text>')
     return "".join(layers) + face + hi
+
+def logo_data_uri():
+    with open(LOGO_PATH, "rb") as f:
+        return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode("ascii")
+
+LOGO_HREF = logo_data_uri()
+
+def official_logo(cx, cy, width):
+    height = width * 520 / 920
+    x = cx - width / 2
+    y = cy - height / 2
+    return (f'<ellipse cx="{cx}" cy="{cy+4}" rx="{width*0.55}" ry="{height*0.44}" '
+            f'fill="{GOLD_LT}" opacity="0.12" filter="url(#soft)"/>'
+            f'<image href="{LOGO_HREF}" x="{x}" y="{y}" width="{width}" height="{height}" '
+            f'preserveAspectRatio="xMidYMid meet"/>')
 
 def ribbon(path, grad, w):
     return (f'<path d="{path}" fill="none" stroke="url(#{grad})" '
@@ -124,11 +141,9 @@ def build(fmt, W, H, L):
     s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}", "ng", 30))
     s.append(ribbon(f"M {-60} {by+120} C {W*0.35} {by+10}, {W*0.65} {by+220}, {W+60} {by+70}", "ca", 26))
     s.append(ribbon(f"M {-60} {by-10} C {W*0.32} {by+170}, {W*0.7} {by-80}, {W+60} {by+150}", "de", 22))
-    # lockup placeholder (no logo asset) — monogram ring + wordmark
+    # Official HBG logo lockup.
     ly = L['lockup']
-    s.append(f'<circle cx="{cx}" cy="{ly}" r="26" fill="none" stroke="{GOLD}" stroke-width="2.5"/>')
-    s.append(txt(cx, ly+9, "HBG", 22, GOLD, SERIF_B, "bold", 1))
-    s.append(txt(cx, ly+52, "HEARTBEAT OF GOD", 18, LILAC, SANS, "normal", 6))
+    s.append(official_logo(cx, ly, L['logo_w']))
     # kicker
     s.append(txt(cx, L['kicker'], KICKER, L['kicker_sz'], LILAC, SANS, "normal", 4))
     # title MTA 2026
@@ -159,18 +174,18 @@ def build(fmt, W, H, L):
     return "".join(s)
 
 # ── Per-format layouts (loudness: HERO > date > title > CTA > scripture) ──
-PORTRAIT = dict(lockup=92, kicker=178, kicker_sz=24,
+PORTRAIT = dict(lockup=92, logo_w=164, kicker=178, kicker_sz=24,
     title=300, title_sz=78, hero=470, hero_sz=205, scr_sz=34,
     scr1=600, scr2=648, attr=712, attr_sz=24,
     camp_cy=852, camp_h=132, camp1=832, camp1_sz=34, camp2=900, date_sz=70,
     cta_cy=1066, cta_h=92, cta_sz=40, url=1158, url_sz=30,
     foot=1290, foot_sz=20)
-SQUARE = dict(lockup=86, kicker=158, kicker_sz=22,
+SQUARE = dict(lockup=86, logo_w=154, kicker=158, kicker_sz=22,
     title=256, title_sz=66, hero=398, hero_sz=180, scr_sz=30,
     scr1=510, scr2=552, attr=606, attr_sz=22,
     camp_cy=724, camp_h=120, camp1=706, camp1_sz=30, camp2=766, date_sz=60,
     cta_cy=908, cta_h=84, cta_sz=36, url=988, url_sz=27)
-STORY = dict(lockup=250, kicker=350, kicker_sz=25,
+STORY = dict(lockup=250, logo_w=178, kicker=350, kicker_sz=25,
     title=530, title_sz=82, hero=742, hero_sz=205, scr_sz=37,
     scr1=905, scr2=960, attr=1032, attr_sz=26,
     camp_cy=1200, camp_h=150, camp1=1178, camp1_sz=37, camp2=1254, date_sz=70,

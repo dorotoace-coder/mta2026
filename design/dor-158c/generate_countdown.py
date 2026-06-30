@@ -4,9 +4,11 @@ DOR-158C — MTA2026 Countdown Promo Variants (design asset only; not app code).
 Same design system as DOR-158B. 8 day-variants x 2 formats (square + story).
 EXPLOITS stays the campaign identity; each day adds a badge + headline.
 """
-import os, math, cairosvg
+import base64, os, math, cairosvg
 
 OUT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(OUT, "..", ".."))
+LOGO_PATH = os.path.join(ROOT, "public", "hbg-logo.svg")
 
 PLUM_TOP="#0C0220"; PURPLE_MID="#2A0A52"; PURPLE="#1A0533"
 GOLD="#C9972A"; GOLD_LT="#E8C96A"; LILAC="#B88FC7"
@@ -63,6 +65,21 @@ def hero3d(cx,y,size):
     out.append(f'<text x="{cx}" y="{y-2}" font-family="{SANS}" font-size="{size}" font-weight="bold" fill="{GOLD_LT}" text-anchor="middle" letter-spacing="5" opacity="0.35">EXPLOITS</text>')
     return "".join(out)
 
+def logo_data_uri():
+    with open(LOGO_PATH, "rb") as f:
+        return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode("ascii")
+
+LOGO_HREF = logo_data_uri()
+
+def official_logo(cx, cy, width):
+    height = width * 520 / 920
+    x = cx - width / 2
+    y = cy - height / 2
+    return (f'<ellipse cx="{cx}" cy="{cy+4}" rx="{width*0.55}" ry="{height*0.44}" '
+            f'fill="{GOLD_LT}" opacity="0.12" filter="url(#soft)"/>'
+            f'<image href="{LOGO_HREF}" x="{x}" y="{y}" width="{width}" height="{height}" '
+            f'preserveAspectRatio="xMidYMid meet"/>')
+
 def badge(cx,cy,label,solid,size,padx):
     w=len(label)*size*0.66+padx*2; h=size*2.0
     x=cx-w/2; y=cy-h/2
@@ -86,11 +103,9 @@ def build(W,H,L,day):
     s.append(ribbon(f"M {-60} {by+40} C {W*0.3} {by-120}, {W*0.7} {by+150}, {W+60} {by-30}","ng",30,op))
     s.append(ribbon(f"M {-60} {by+120} C {W*0.35} {by+10}, {W*0.65} {by+220}, {W+60} {by+70}","ca",26,op))
     s.append(ribbon(f"M {-60} {by-10} C {W*0.32} {by+170}, {W*0.7} {by-80}, {W+60} {by+150}","de",22,op))
-    # lockup
+    # Official HBG logo lockup.
     ly=L['lockup']
-    s.append(f'<circle cx="{cx}" cy="{ly}" r="22" fill="none" stroke="{GOLD}" stroke-width="2.2"/>')
-    s.append(txt(cx,ly+8,"HBG",18,GOLD,SERIF_B,"bold",1))
-    s.append(txt(cx,ly+44,"HEARTBEAT OF GOD",15,LILAC,SANS,"normal",5))
+    s.append(official_logo(cx, ly, L['logo_w']))
     # countdown badge
     s.append(badge(cx,L['badge'],bdg,solid,L['badge_sz'],L['badge_pad']))
     # identity: MTA 2026 + EXPLOITS (campaign anchor)
@@ -112,12 +127,12 @@ def build(W,H,L,day):
     s.append(f'<rect width="{W}" height="{H}" fill="url(#vig)"/></svg>')
     return "".join(s)
 
-SQUARE=dict(lockup=70,badge=148,badge_sz=30,badge_pad=34,
+SQUARE=dict(lockup=70,logo_w=134,badge=148,badge_sz=30,badge_pad=34,
     title=250,title_sz=40,hero=350,hero_sz=132,
     head=452,head_sz=46,sub=500,sub_sz=27,
     camp_cy=640,camp_h=104,camp1=624,camp1_sz=26,camp2=678,date_sz=46,
     cta_cy=830,cta_h=82,cta_sz=34,url=908,url_sz=26)
-STORY=dict(lockup=250,badge=380,badge_sz=34,badge_pad=40,
+STORY=dict(lockup=250,logo_w=174,badge=380,badge_sz=34,badge_pad=40,
     title=560,title_sz=46,hero=690,hero_sz=150,
     head=840,head_sz=54,sub=900,sub_sz=31,
     camp_cy=1110,camp_h=120,camp1=1092,camp1_sz=30,camp2=1152,date_sz=54,
