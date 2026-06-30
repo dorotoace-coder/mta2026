@@ -35,6 +35,30 @@ type RecipientCounts = {
   source: "supabase" | "mock";
 };
 
+type PrayerSection = {
+  direction: string;
+  scriptureAnchor: {
+    reference: string;
+    text: string;
+  };
+  prayerPoints: string[];
+};
+
+const prayerSectionsByDay: Record<number, PrayerSection> = {
+  1: {
+    direction: "Setting the heart before God for consecration, focus, and spiritual alignment.",
+    scriptureAnchor: {
+      reference: "Daniel 9:3 — KJV",
+      text: "And I set my face unto the Lord God, to seek by prayer and supplications, with fasting...",
+    },
+    prayerPoints: [
+      "Father, I set my face toward You; deliver my heart from distraction and make me focused in this season of waiting.",
+      "Every weakness, appetite, or habit fighting my consecration, lose your hold over my life by the power of prayer and fasting.",
+      "Lord, align my spirit with Your will; let these 21 days produce clarity, strength, fresh fire, and undeniable exploits.",
+    ],
+  },
+};
+
 const parseArgs = (): Args => {
   const args = process.argv.slice(2);
   const valueFor = (name: string) => {
@@ -197,6 +221,7 @@ const renderEmail = ({
   scripture,
   devotional,
   declaration,
+  prayerSection,
   journeyUrl,
 }: {
   recipient: RegistrationRecipient;
@@ -205,9 +230,23 @@ const renderEmail = ({
   scripture: string;
   devotional: string;
   declaration: string;
+  prayerSection?: PrayerSection;
   journeyUrl: string;
 }) => {
   const name = htmlEscape(recipient.full_name || "Beloved");
+  const prayerHtml = prayerSection
+    ? `<div style="margin:0 0 22px;padding:18px;border:1px solid #5b4621;border-radius:14px;background:#0d1025;">
+                  <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d6b25e;margin-bottom:10px;">Prayer Direction</div>
+                  <div style="font-size:15px;line-height:1.6;color:#efe3bf;margin-bottom:14px;">${htmlEscape(prayerSection.direction)}</div>
+                  <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#d6b25e;margin-bottom:8px;">Scripture Anchor</div>
+                  <div style="font-size:15px;line-height:1.6;color:#fff4d0;margin-bottom:14px;"><strong>${htmlEscape(prayerSection.scriptureAnchor.reference)}</strong><br><span style="font-style:italic;">${htmlEscape(prayerSection.scriptureAnchor.text)}</span></div>
+                  <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#d6b25e;margin-bottom:8px;">3 Prophetic Prayer Points</div>
+                  <ol style="margin:0;padding-left:20px;color:#efe3bf;font-size:15px;line-height:1.65;">
+                    ${prayerSection.prayerPoints.map((point) => `<li style="margin:0 0 8px;">${htmlEscape(point)}</li>`).join("")}
+                  </ol>
+                </div>`
+    : "";
+
   return `<!doctype html>
 <html>
   <body style="margin:0;background:#070817;color:#f9efd0;font-family:Georgia,'Times New Roman',serif;">
@@ -235,6 +274,7 @@ const renderEmail = ({
                   <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d6b25e;margin-bottom:8px;">Declaration</div>
                   <div style="font-size:17px;line-height:1.65;color:#fff4d0;font-weight:bold;">${htmlEscape(declaration)}</div>
                 </div>
+                ${prayerHtml}
                 <p style="margin:0 0 18px;text-align:center;">
                   <a href="${journeyUrl}" style="display:inline-block;background:#d6b25e;color:#070817;text-decoration:none;font-weight:bold;border-radius:999px;padding:12px 20px;">Open Your MTA Journey Page</a>
                 </p>
@@ -271,6 +311,7 @@ const run = async () => {
   const runId = crypto.randomUUID();
   const day = isoDateToFastDay(args.date);
   const entry = fastDayContent[day - 1];
+  const prayerSection = prayerSectionsByDay[day];
   const contentKey = `mta-fast-day-${String(day).padStart(2, "0")}`;
   const baseUrl = (process.env.MTA_PUBLIC_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "");
 
@@ -294,6 +335,14 @@ const run = async () => {
     journey_day: day,
     content_key: contentKey,
     title: entry.title,
+    prayer_section: prayerSection
+      ? {
+          included: true,
+          direction: prayerSection.direction,
+          scripture_anchor: prayerSection.scriptureAnchor.reference,
+          prayer_points_count: prayerSection.prayerPoints.length,
+        }
+      : { included: false },
     counts,
     safety: {
       live_email_sent: false,
@@ -330,6 +379,7 @@ const run = async () => {
       scripture: entry.scripture,
       devotional: entry.devotional,
       declaration: entry.declaration,
+      prayerSection,
       journeyUrl,
     });
 
