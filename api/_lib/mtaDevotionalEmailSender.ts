@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { fastDayContent } from "./mtaFastJourneyContent.ts";
+import { fastDayContent } from "../../src/lib/mtaFastJourneyContent.ts";
 
 const FAST_START_UTC = Date.UTC(2026, 7, 13);
 const DAY_MS = 24 * 60 * 60 * 1000;

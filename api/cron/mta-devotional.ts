@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { runMtaDevotionalEmailSend } from "../../src/lib/mtaDevotionalEmailSender.ts";
+import { runMtaDevotionalEmailSend } from "../_lib/mtaDevotionalEmailSender.ts";
 
 type Body = {
   date?: string;
