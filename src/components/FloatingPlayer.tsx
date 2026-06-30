@@ -39,8 +39,8 @@ const FloatingPlayer = () => {
       <div
         className="fixed bottom-5 left-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
         style={{
-          background: "rgba(45,10,78,0.92)",
-          border: "1px solid rgba(201,151,42,0.35)",
+          background: "rgba(7,20,43,0.92)",
+          border: "1px solid rgba(215,183,103,0.34)",
           backdropFilter: "blur(12px)",
         }}
       >
@@ -60,7 +60,7 @@ const FloatingPlayer = () => {
                 type="button"
                 onClick={() => selectTrack(index)}
                 className="h-1.5 w-5 rounded-full transition-colors"
-                style={{ background: index === trackIndex ? "#C9972A" : "rgba(255,255,255,0.2)" }}
+                style={{ background: index === trackIndex ? "#d7b767" : "rgba(255,255,255,0.22)" }}
                 aria-label={`Play ${track.label}`}
               />
             ))}
@@ -69,11 +69,11 @@ const FloatingPlayer = () => {
 
         <button
           onClick={toggle}
-          className="w-8 h-8 rounded-full bg-[#C9972A]/20 hover:bg-[#C9972A]/40 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-full bg-[#d7b767]/18 hover:bg-[#d7b767]/34 flex items-center justify-center transition-colors"
         >
           {playing
-            ? <Pause className="w-3.5 h-3.5 text-[#C9972A]" />
-            : <Play className="w-3.5 h-3.5 text-[#C9972A] translate-x-px" />
+            ? <Pause className="w-3.5 h-3.5 text-[#d7b767]" />
+            : <Play className="w-3.5 h-3.5 text-[#d7b767] translate-x-px" />
           }
         </button>
 

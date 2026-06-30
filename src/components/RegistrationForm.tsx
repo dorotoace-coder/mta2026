@@ -7,11 +7,11 @@ const designations = [
   "Church Leader", "Minister", "Missionary", "Christian Worker", "Other",
 ];
 
-const inputStyle = { background: "rgba(155,114,170,0.1)", border: "1px solid rgba(155,114,170,0.2)" };
+const inputStyle = { background: "rgba(255,255,255,0.055)", border: "1px solid rgba(200,183,255,0.2)" };
 const inputClass =
-  "w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#9B72AA]/50";
+  "w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/32 outline-none transition-all duration-300 focus:ring-2 focus:ring-[#c8b7ff]/45";
 const labelClass =
-  "block text-[#B88FC7] text-xs font-semibold tracking-wider uppercase mb-1.5";
+  "block text-[#c8b7ff] text-xs font-semibold tracking-wider uppercase mb-1.5";
 
 const fastOptions = [
   { value: "yes", label: "Yes, I will join", sub: "21 days of fasting & prayer" },
@@ -66,18 +66,17 @@ const RegistrationForm = () => {
     return (
       <div className="w-full max-w-md mx-auto mb-10">
         <div
-          className="rounded-2xl p-8 text-center card-3d"
+          className="mta-glass rounded-2xl p-8 text-center"
           style={{
-            background: "linear-gradient(135deg, rgba(155,114,170,0.2) 0%, rgba(45,10,78,0.7) 50%, rgba(201,151,42,0.1) 100%)",
-            border: "1px solid rgba(155,114,170,0.3)",
+            background: "linear-gradient(145deg, rgba(15,42,105,0.82), rgba(43,23,104,0.76))",
           }}
         >
           <div className="w-16 h-16 rounded-full gold-gradient flex items-center justify-center mx-auto mb-5">
             <CheckCircle className="w-8 h-8 text-[#2D0A4E]" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-2">Registration Complete!</h3>
-          <p className="text-[#B88FC7] text-sm leading-relaxed mb-2">
-            Thank you, <span className="text-[#C9972A] font-semibold">{formData.fullName}</span>!
+          <p className="mb-2 text-sm leading-relaxed text-[#c8b7ff]">
+            Thank you, <span className="font-semibold text-[#d7b767]">{formData.fullName}</span>!
             Your registration for MTA 2026 — EXPLOITS has been received.
           </p>
           <p className="text-white/60 text-xs leading-relaxed">
@@ -93,7 +92,7 @@ const RegistrationForm = () => {
                   : "Not this time"}
             </span>.<br />
             A confirmation email is on its way to <span className="text-white/80">{formData.email}</span>.<br />
-            <span className="text-[#C9972A]">Come expecting a fresh encounter with God.</span>
+            <span className="text-[#d7b767]">Come expecting a fresh encounter with God.</span>
           </p>
         </div>
       </div>
@@ -103,7 +102,7 @@ const RegistrationForm = () => {
   return (
     <div className="w-full max-w-md mx-auto mb-10">
       <div className="text-center mb-5">
-        <p className="text-[#C9972A] text-xs font-semibold tracking-widest uppercase mb-3">
+        <p className="mta-kicker mb-3">
           Join Us
         </p>
         <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Register Now</h3>
@@ -114,10 +113,9 @@ const RegistrationForm = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl p-6 sm:p-8 card-3d"
+        className="mta-glass rounded-[1.75rem] p-6 sm:p-8"
         style={{
-          background: "linear-gradient(135deg, rgba(155,114,170,0.15) 0%, rgba(45,10,78,0.7) 50%, rgba(155,114,170,0.1) 100%)",
-          border: "1px solid rgba(155,114,170,0.25)",
+          background: "linear-gradient(145deg, rgba(15,42,105,0.78), rgba(43,23,104,0.72))",
         }}
       >
         <div className="space-y-4">
@@ -173,7 +171,7 @@ const RegistrationForm = () => {
                     className="rounded-xl px-4 py-3 text-left transition-all duration-300"
                     style={{
                       background: active ? "rgba(201,151,42,0.18)" : "rgba(155,114,170,0.1)",
-                      border: active ? "1px solid rgba(201,151,42,0.6)" : "1px solid rgba(155,114,170,0.2)",
+                      border: active ? "1px solid rgba(215,183,103,0.65)" : "1px solid rgba(200,183,255,0.2)",
                     }}
                   >
                     <span className="block text-sm font-semibold text-white">{opt.label}</span>
@@ -197,7 +195,7 @@ const RegistrationForm = () => {
                     className="w-full rounded-xl px-4 py-3 text-left transition-all duration-300"
                     style={{
                       background: active ? "rgba(201,151,42,0.18)" : "rgba(155,114,170,0.1)",
-                      border: active ? "1px solid rgba(201,151,42,0.6)" : "1px solid rgba(155,114,170,0.2)",
+                      border: active ? "1px solid rgba(215,183,103,0.65)" : "1px solid rgba(200,183,255,0.2)",
                     }}
                   >
                     <span className="block text-sm font-semibold text-white">{opt.label}</span>
@@ -223,18 +221,18 @@ const RegistrationForm = () => {
               <select
                 name="designation" required value={formData.designation} onChange={handleChange}
                 className={`${inputClass} appearance-none cursor-pointer`}
-                style={{ background: "rgba(45,10,78,0.9)", border: "1px solid rgba(155,114,170,0.2)" }}
+                style={{ background: "rgba(10,22,55,0.95)", border: "1px solid rgba(200,183,255,0.2)" }}
               >
-                <option value="" disabled style={{ background: "#2D0A4E", color: "#B88FC7" }}>
+                <option value="" disabled style={{ background: "#07142B", color: "#C8B7FF" }}>
                   Select your designation
                 </option>
                 {designations.map((d) => (
-                  <option key={d} value={d} style={{ background: "#2D0A4E", color: "#fff" }}>
+                  <option key={d} value={d} style={{ background: "#07142B", color: "#fff" }}>
                     {d}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9B72AA] pointer-events-none" />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#c8b7ff]" />
             </div>
           </div>
 
@@ -259,7 +257,7 @@ const RegistrationForm = () => {
         <button
           type="submit"
           disabled={status === "submitting"}
-          className="w-full mt-6 gold-gradient text-[#2D0A4E] py-3.5 rounded-xl font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-[#C9972A]/30 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="mta-primary-button mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold tracking-wide transition-all duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70"
         >
           {status === "submitting"
             ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>

@@ -1,20 +1,18 @@
 import RegistrationForm from "./RegistrationForm";
+import { Check } from "lucide-react";
 
 const RegisterSection = () => (
-  <section id="register" className="relative py-24 overflow-hidden"
-    style={{ background: "linear-gradient(180deg, #1a0008 0%, #0d0002 100%)" }}>
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
-        style={{ background: "radial-gradient(ellipse, #ff4500, transparent)", filter: "blur(100px)" }} />
-    </div>
-    <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6">
-      <div className="text-center mb-12">
-        <p className="text-[#C9972A] text-xs font-bold tracking-widest uppercase mb-4">Secure Your Place</p>
-        <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4">Register for MTA 2026</h2>
-        <p className="text-white/50 text-base">Don't miss this divine appointment. Registration is absolutely <strong className="text-[#C9972A]">FREE</strong>.</p>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-white/40">
+  <section id="register" className="mta-section">
+    <div className="mta-container max-w-3xl">
+      <div className="mb-12 text-center">
+        <p className="mta-kicker mb-4">Secure Your Place</p>
+        <h2 className="mb-4 text-4xl font-black text-white sm:text-6xl">Register for <span className="mta-gold-text">MTA 2026</span></h2>
+        <p className="text-base text-white/58">Don't miss this divine appointment. Registration is absolutely <strong className="text-[#d7b767]">FREE</strong>.</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-white/56">
           {["Opening Night", "Divine Turnaround", "Supernatural Encounters", "Celebration Service", "Free Registration"].map((f) => (
-            <span key={f} className="flex items-center gap-1">✦ {f}</span>
+            <span key={f} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5">
+              <Check className="h-3.5 w-3.5 text-[#d7b767]" /> {f}
+            </span>
           ))}
         </div>
       </div>
