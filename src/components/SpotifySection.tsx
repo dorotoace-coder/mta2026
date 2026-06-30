@@ -56,7 +56,7 @@ const SpotifySection = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto mb-10">
-      <audio ref={audioRef} src="/aku-te-nigeria.mp3" preload="metadata" />
+      <audio ref={audioRef} src="/audio/mta-2026-announcement.mp3" preload="metadata" />
 
       <div className="text-center mb-5">
         <p className="text-[#C9972A] text-xs font-semibold tracking-widest uppercase mb-3">
@@ -66,7 +66,7 @@ const SpotifySection = () => {
           Tune Your Spirit
         </h3>
         <p className="text-white/50 text-sm">
-          The official MTA 2026 worship sound — Aku Te Nigeria
+          The official MTA 2026 announcement — EXPLOITS
         </p>
       </div>
 
@@ -123,9 +123,9 @@ const SpotifySection = () => {
           </div>
 
           {/* Track info */}
-          <p className="text-white font-bold text-base mb-1">Aku Te Nigeria</p>
+          <p className="text-white font-bold text-base mb-1">MTA 2026 — EXPLOITS</p>
           <p className="text-[#B88FC7] text-xs font-medium tracking-wider uppercase mb-5">
-            MTA 2026 — Worship Sound
+            Official MTA Audio
           </p>
 
           {/* Progress bar */}

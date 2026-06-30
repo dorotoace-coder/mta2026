@@ -33,7 +33,7 @@ const FloatingPlayer = () => {
 
   return (
     <>
-      <audio ref={audioRef} src="/aku-te-nigeria.mp3" loop preload="auto" />
+      <audio ref={audioRef} src="/audio/mta-2026-announcement.mp3" loop preload="auto" />
       <div
         className="fixed bottom-5 left-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
         style={{
@@ -50,8 +50,8 @@ const FloatingPlayer = () => {
         </div>
 
         <div className="leading-tight">
-          <p className="text-white text-xs font-bold">Aku Te Nigeria</p>
-          <p className="text-[#C9972A] text-[10px]">MTA 2026 Worship Sound</p>
+          <p className="text-white text-xs font-bold">MTA 2026 — EXPLOITS</p>
+          <p className="text-[#C9972A] text-[10px]">Official MTA Audio</p>
         </div>
 
         <button
