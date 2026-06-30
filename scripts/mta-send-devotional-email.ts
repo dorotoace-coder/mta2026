@@ -46,15 +46,15 @@ type PrayerSection = {
 
 const prayerSectionsByDay: Record<number, PrayerSection> = {
   1: {
-    direction: "Setting the heart before God for consecration, focus, and spiritual alignment.",
+    direction: "Prophetic alignment for consecration, focus, and spiritual authority.",
     scriptureAnchor: {
       reference: "Daniel 9:3 — KJV",
-      text: "And I set my face unto the Lord God, to seek by prayer and supplications, with fasting...",
+      text: "And I set my face unto the Lord God, to seek by prayer and supplications, with fasting…",
     },
     prayerPoints: [
-      "Father, I set my face toward You; deliver my heart from distraction and make me focused in this season of waiting.",
-      "Every weakness, appetite, or habit fighting my consecration, lose your hold over my life by the power of prayer and fasting.",
-      "Lord, align my spirit with Your will; let these 21 days produce clarity, strength, fresh fire, and undeniable exploits.",
+      "By the power of the Holy Ghost, I set my face toward God; every distraction assigned to weaken my consecration is broken now.",
+      "Every weakness, appetite, or habit fighting my consecration, lose your hold over my life by the power of the Holy Ghost.",
+      "I receive fresh fire, clarity, strength, and spiritual authority; I rise from this fast loaded for exploits in Jesus’ name.",
     ],
   },
 };
