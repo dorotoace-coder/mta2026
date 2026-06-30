@@ -6,6 +6,7 @@ type Body = {
   email?: string;
   limit?: number;
   live?: boolean;
+  all?: boolean;
 };
 
 const asSingleValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -66,21 +67,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const body = getBody(req);
   const liveRequested = isTrue(asSingleValue(req.query.live)) || isTrue(body.live);
-
-  if (liveRequested) {
-    return res.status(403).json({
-      view_type: "mta_devotional_cron",
-      status: "live_send_blocked",
-      reason: "Scheduled live devotional sends are blocked in DOR-156B-P1.",
-      dry_run: true,
-      email_sent: false,
-      provider_call_made: false,
-      provider_calls_used: 0,
-    });
-  }
-
+  const allRequested = isTrue(asSingleValue(req.query.all)) || isTrue(body.all);
   const date = asSingleValue(req.query.date) || body.date || new Date().toISOString().slice(0, 10);
   const email = asSingleValue(req.query.email) || body.email;
+
+  // DOR-156B-P4A: single-recipient-only Preview live-test gate.
+  // live=true is permitted ONLY when the Preview gate is enabled, a single
+  // recipient email is provided, and all-recipient sending is NOT requested.
+  // All-recipient live stays blocked. The sender still enforces
+  // MTA_DEVOTIONAL_SENDS_DISABLED, so this branch cannot send while disabled.
+  if (liveRequested) {
+    const singleLiveTestEnabled =
+      process.env.MTA_DEVOTIONAL_SINGLE_LIVE_TEST_ENABLED === "true";
+
+    if (!singleLiveTestEnabled || allRequested || !email) {
+      return res.status(403).json({
+        view_type: "mta_devotional_cron",
+        status: "live_send_blocked",
+        reason:
+          "Live sends are blocked. Only a single-recipient Preview live test is permitted (requires MTA_DEVOTIONAL_SINGLE_LIVE_TEST_ENABLED=true, a single email, and all not requested).",
+        dry_run: true,
+        email_sent: false,
+        provider_call_made: false,
+        provider_calls_used: 0,
+      });
+    }
+
+    try {
+      const summary = await runMtaDevotionalEmailSend({
+        date,
+        email,
+        limit: 1,
+        live: true,
+        all: false,
+        confirmSend: false,
+        source: "cron",
+        allowAllLive: false,
+      });
+
+      return res.status(200).json({
+        view_type: "mta_devotional_cron",
+        status: "single_live_test_complete",
+        ...summary,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        view_type: "mta_devotional_cron",
+        status: "single_live_test_failed",
+        error: error instanceof Error ? error.message : String(error),
+        email_sent: false,
+        provider_call_made: false,
+        provider_calls_used: 0,
+      });
+    }
+  }
+
   const limitValue = asSingleValue(req.query.limit);
   const parsedLimit = limitValue ? Number.parseInt(limitValue, 10) : body.limit;
 
