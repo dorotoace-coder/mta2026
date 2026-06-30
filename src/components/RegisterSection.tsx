@@ -13,7 +13,7 @@ const RegisterSection = () => (
         <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4">Register for MTA 2026</h2>
         <p className="text-white/50 text-base">Don't miss this divine appointment. Registration is absolutely <strong className="text-[#C9972A]">FREE</strong>.</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-white/40">
-          {["3 days of encounter", "Prophetic impartation", "Divine turnaround", "Free materials"].map((f) => (
+          {["Opening Night", "Divine Turnaround", "Supernatural Encounters", "Celebration Service", "Free Registration"].map((f) => (
             <span key={f} className="flex items-center gap-1">✦ {f}</span>
           ))}
         </div>

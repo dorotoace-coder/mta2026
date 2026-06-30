@@ -80,7 +80,7 @@ const AboutSection = () => (
           </p>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { icon: "🔥", label: "3 Days of Fire" },
+              { icon: "🔥", label: "3 Days of EXPLOITS" },
               { icon: "🙏", label: "Prophetic Prayer" },
               { icon: "📖", label: "Mighty Word" },
               { icon: "🌊", label: "Rivers of Power" },

@@ -2,32 +2,23 @@ import { Calendar, Clock, MapPin, Mic } from "lucide-react";
 
 const schedule = [
   {
-    day: "Day 1", date: "Thursday, September 4", title: "Opening Fire — Rivers Arise",
+    day: "Day 1", date: "Friday, September 4", title: "Opening Night",
     events: [
-      { time: "9:00 AM", session: "Registration & Accreditation" },
-      { time: "10:00 AM", session: "Opening Worship & Prayer" },
-      { time: "11:00 AM", session: "The Word — Rivers of God" },
-      { time: "6:00 PM", session: "Night of Fire — Evening Session" },
+      { time: "5:00 PM", session: "Red Carpet" },
+      { time: "6:00 PM", session: "Opening Session" },
     ],
   },
   {
-    day: "Day 2", date: "Friday, September 5", title: "Prophetic Encounter & Power",
+    day: "Day 2", date: "Saturday, September 5", title: "Divine Turnaround",
     events: [
-      { time: "9:00 AM", session: "Morning Devotion & Prayer" },
-      { time: "10:00 AM", session: "Session 1 — Mighty Turn Around" },
-      { time: "12:00 PM", session: "Lunch Break" },
-      { time: "2:00 PM", session: "Session 2 — Prophetic Activation" },
-      { time: "6:00 PM", session: "Night of Supernatural Power" },
+      { time: "9:00 AM", session: "Morning Session: Divine Turnaround" },
+      { time: "5:00 PM", session: "Evening Session: Supernatural Encounters" },
     ],
   },
   {
-    day: "Day 3", date: "Saturday, September 6", title: "Commissioning & Sending",
+    day: "Day 3", date: "Sunday, September 6", title: "Celebration & Graduation",
     events: [
-      { time: "9:00 AM", session: "Morning Devotion" },
-      { time: "10:00 AM", session: "Session 3 — Divine Turnaround" },
-      { time: "12:00 PM", session: "Commissioning Service" },
-      { time: "1:00 PM", session: "Communion & Covenant Seal" },
-      { time: "2:00 PM", session: "Closing & Departure" },
+      { time: "9:00 AM", session: "Celebration Service & Ordination/Graduation" },
     ],
   },
 ];
@@ -44,7 +35,7 @@ const ScheduleSection = () => (
     <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
       <div className="text-center mb-16">
         <p className="text-[#C9972A] text-xs sm:text-sm font-semibold tracking-widest uppercase mb-3">Conference Programme</p>
-        <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4">3 Days of Fire</h2>
+        <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4">3 Days of EXPLOITS</h2>
         <div className="flex items-center justify-center gap-6 text-white/40 text-sm mt-4">
           <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-[#C9972A]" /> September 4–6, 2026</span>
           <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-[#C9972A]" /> HBG Ministry, Akute</span>
