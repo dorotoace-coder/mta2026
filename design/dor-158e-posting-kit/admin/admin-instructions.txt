@@ -1,0 +1,20 @@
+MTA 2026 — Posting Instructions (admin)
+
+CADENCE
+- One post per day, T-7 (Aug 6) through Day 0 (Aug 13). Use the matching day folder.
+- Post at a consistent morning time (~7:00 AM local) for rhythm.
+- On T-1 (Aug 12) and Day 0 (Aug 13), reshare to Status again in the evening.
+
+WHAT GOES WHERE (per day folder)
+- *-square-1080x1080.png  + caption-feed.txt      -> WhatsApp groups / feeds
+- *-story-1080x1920.png   + caption-status.txt    -> WhatsApp Status
+- caption-broadcast.txt                            -> WhatsApp broadcast list
+
+PINNED / ONGOING
+- Pin the master flyer (00-master-flyer/) and admin/pinned-whatsapp-announcement.txt
+  in every group description for the whole window.
+
+RULES
+- Every link points ONLY to mta.heartbeatofgod.ca. Do NOT create or share any separate fast sign-up link.
+- One asset, one caption, one CTA per post. Keep it clean — no link spam.
+- Hashtags: <= 5 per feed post; 0-1 on Status; none on broadcast/group messages.
