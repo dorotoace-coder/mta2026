@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runMtaDevotionalEmailSend } from "../api/_lib/mtaDevotionalEmailSender.ts";
+import { runMtaDevotionalEmailSend } from "../api/_lib/mtaDevotionalEmailSender.js";
 
 type Args = {
   date: string;
