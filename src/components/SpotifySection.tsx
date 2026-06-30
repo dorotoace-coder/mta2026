@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Music, Headphones, Disc3, Play, Pause, Volume2 } from "lucide-react";
+import { mtaAudioTracks } from "@/lib/mtaAudioTracks";
 
 const SpotifySection = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -7,6 +8,8 @@ const SpotifySection = () => {
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const selectedTrack = mtaAudioTracks[trackIndex];
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -35,6 +38,18 @@ const SpotifySection = () => {
     setPlaying(!playing);
   };
 
+  const selectTrack = (index: number) => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPlaying(false);
+    setCurrent(0);
+    setDuration(0);
+    setTrackIndex(index);
+  };
+
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -56,7 +71,7 @@ const SpotifySection = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto mb-10">
-      <audio ref={audioRef} src="/aku-te-nigeria.mp3" preload="metadata" />
+      <audio ref={audioRef} src={selectedTrack.src} preload="metadata" />
 
       <div className="text-center mb-5">
         <p className="text-[#C9972A] text-xs font-semibold tracking-widest uppercase mb-3">
@@ -66,7 +81,7 @@ const SpotifySection = () => {
           Tune Your Spirit
         </h3>
         <p className="text-white/50 text-sm">
-          The official MTA 2026 worship sound — Aku Te Nigeria
+          A three-track MTA 2026 audio playlist — EXPLOITS
         </p>
       </div>
 
@@ -123,10 +138,28 @@ const SpotifySection = () => {
           </div>
 
           {/* Track info */}
-          <p className="text-white font-bold text-base mb-1">Aku Te Nigeria</p>
+          <p className="text-white font-bold text-base mb-1">{selectedTrack.label}</p>
           <p className="text-[#B88FC7] text-xs font-medium tracking-wider uppercase mb-5">
-            MTA 2026 — Worship Sound
+            Official MTA Audio
           </p>
+
+          <div className="mb-5 grid gap-2">
+            {mtaAudioTracks.map((track, index) => (
+              <button
+                key={track.id}
+                type="button"
+                onClick={() => selectTrack(index)}
+                className="rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors"
+                style={{
+                  background: index === trackIndex ? "rgba(201,151,42,0.2)" : "rgba(255,255,255,0.04)",
+                  border: index === trackIndex ? "1px solid rgba(201,151,42,0.45)" : "1px solid rgba(255,255,255,0.08)",
+                  color: index === trackIndex ? "#F7E8B5" : "rgba(255,255,255,0.6)",
+                }}
+              >
+                {track.label}
+              </button>
+            ))}
+          </div>
 
           {/* Progress bar */}
           <div className="mb-1">
