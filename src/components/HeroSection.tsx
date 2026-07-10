@@ -1,15 +1,16 @@
 import { CalendarDays, MapPin, MonitorPlay, Sparkles } from "lucide-react";
 import { ShaderCanvas, SHADER_SRC } from "@/components/ui/raidal-2";
 
+const scrollToSection = (id: string) => {
+  const el = document.querySelector(id);
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY;
+  window.scrollTo({ top, behavior: "smooth" });
+};
+
 const HeroSection = () => {
-  const scrollToRegister = () => {
-    const el = document.querySelector("#register");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-  const scrollToSchedule = () => {
-    const el = document.querySelector("#schedule");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToRegister = () => scrollToSection("#register");
+  const scrollToSchedule = () => scrollToSection("#schedule");
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-24">
