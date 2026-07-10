@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 
 
-const SHADER_SRC = `#version 300 es
+export const SHADER_SRC = `#version 300 es
 precision highp float;
 
 out vec4 fragColor;
@@ -34,8 +34,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         a = atan(p.y, p.x) + a + i * i;
         float sm = smoothstep(edge0, edge1, cos(a));
 
-        // o += .03/denom * sm * (1.2 + sin(a + i + vec4(0,2,4,0)))
-        o += 0.03 / denom * sm * (1.2 + sin(a + i + vec4(0.0, 2.0, 4.0, 0.0)));
+        // MTA palette: blend between hero violet (#7E73FF) and gold (#D7B767)
+        // instead of the original full RGB rainbow cycle.
+        vec3 violet = vec3(0.494, 0.451, 1.0);
+        vec3 gold   = vec3(0.843, 0.718, 0.404);
+        float mixT  = 0.5 + 0.5 * sin(a + i);
+        vec3 tint   = mix(violet, gold, mixT) * (1.2 + 0.6 * sin(a + i));
+        o += 0.03 / denom * sm * vec4(tint, 1.0);
     }
 
     o = tanh(o);
@@ -82,7 +87,7 @@ function drawError(gl: WebGL2RenderingContext, msg: string) {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-function ShaderCanvas({
+export function ShaderCanvas({
   fragSource,
   pixelRatio,
 }: {

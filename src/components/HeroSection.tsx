@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin, MonitorPlay, Sparkles } from "lucide-react";
+import { ShaderCanvas, SHADER_SRC } from "@/components/ui/raidal-2";
 
 const HeroSection = () => {
   const scrollToRegister = () => {
@@ -14,6 +15,9 @@ const HeroSection = () => {
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-24">
       {/* Premium blue/violet atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 opacity-70">
+          <ShaderCanvas fragSource={SHADER_SRC} />
+        </div>
         <div className="absolute inset-0"
           style={{ background: "radial-gradient(circle at 50% 22%, rgba(126,115,255,0.34), transparent 34rem), radial-gradient(circle at 50% 60%, rgba(215,183,103,0.16), transparent 30rem)" }} />
         <div className="absolute left-1/2 top-[14%] h-[520px] w-[920px] -translate-x-1/2 rounded-[50%] border border-white/10 opacity-40"
