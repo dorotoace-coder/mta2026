@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
 
+const TARGET = new Date("2026-09-04T09:00:00").getTime();
+
 const CountdownTimer = () => {
-  const target = new Date("2026-09-04T09:00:00").getTime();
   const [time, setTime] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+  const [live, setLive] = useState(false);
 
   useEffect(() => {
     const tick = () => {
-      const diff = target - Date.now();
-      if (diff <= 0) return;
+      const diff = TARGET - Date.now();
+      if (diff <= 0) {
+        setLive(true);
+        setTime({ days: 0, hours: 0, mins: 0, secs: 0 });
+        return;
+      }
       setTime({
-        days:  Math.floor(diff / 86400000),
+        days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
-        mins:  Math.floor((diff % 3600000) / 60000),
-        secs:  Math.floor((diff % 60000) / 1000),
+        mins: Math.floor((diff % 3600000) / 60000),
+        secs: Math.floor((diff % 60000) / 1000),
       });
     };
     tick();
@@ -20,26 +26,44 @@ const CountdownTimer = () => {
     return () => clearInterval(id);
   }, []);
 
-  const Unit = ({ val, label }: { val: number; label: string }) => (
-    <div className="flex flex-col items-center">
-      <div className="text-4xl sm:text-6xl font-black text-white tabular-nums"
-        style={{ textShadow: "0 0 30px rgba(255,69,0,0.5)" }}>
-        {String(val).padStart(2, "0")}
-      </div>
-      <div className="text-[10px] font-bold tracking-widest uppercase mt-1" style={{ color: "#C9972A" }}>{label}</div>
-    </div>
-  );
+  const units = [
+    { label: "Days", value: time.days },
+    { label: "Hours", value: time.hours },
+    { label: "Minutes", value: time.mins },
+    { label: "Seconds", value: time.secs },
+  ];
 
   return (
-    <div className="flex items-center gap-4 sm:gap-8">
-      <Unit val={time.days}  label="Days" />
-      <span className="text-3xl font-bold" style={{ color: "#C9972A" }}>:</span>
-      <Unit val={time.hours} label="Hours" />
-      <span className="text-3xl font-bold" style={{ color: "#C9972A" }}>:</span>
-      <Unit val={time.mins}  label="Mins" />
-      <span className="text-3xl font-bold" style={{ color: "#C9972A" }}>:</span>
-      <Unit val={time.secs}  label="Secs" />
-    </div>
+    <section id="countdown" className="mta-section">
+      <div className="mta-container text-center">
+        <p className="mta-kicker mb-4">
+          {live ? "It's Happening Now" : "Mark Your Calendar"}
+        </p>
+        <h2 className="mb-3 text-4xl font-black tracking-tight text-white sm:text-6xl">
+          Countdown to <span className="mta-gold-text">MTA 2026</span>
+        </h2>
+        <p className="mx-auto mb-12 max-w-xl text-sm uppercase tracking-[0.32em] text-white/55 sm:text-base">
+          September 4–6, 2026 · HBG Ministry, Akute
+        </p>
+
+        <div className="mx-auto flex max-w-4xl items-stretch justify-center gap-3 sm:gap-6">
+          {units.map((unit) => (
+            <div
+              key={unit.label}
+              className="mta-glass flex flex-1 flex-col items-center justify-center rounded-3xl px-2 py-6 sm:py-9"
+            >
+              <div
+                className="mta-gold-text text-5xl font-black leading-none tabular-nums sm:text-8xl"
+                style={{ textShadow: "0 18px 40px rgba(126,115,255,0.25)" }}
+              >
+                {String(unit.value).padStart(2, "0")}
+              </div>
+              <div className="mta-kicker mt-3 text-[10px] sm:text-xs">{unit.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 };
 

@@ -1,21 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Pause, Play, Music2, X } from "lucide-react";
+import { mtaAudioTracks } from "@/lib/mtaAudioTracks";
 
 const FloatingPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [attempted, setAttempted] = useState(false);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || attempted) return;
-    setAttempted(true);
-    audio.volume = 0.5;
-    audio.play().then(() => setPlaying(true)).catch(() => {
-      // Autoplay blocked — user interaction required, player stays visible
-    });
-  }, [attempted]);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const selectedTrack = mtaAudioTracks[trackIndex];
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -29,16 +21,26 @@ const FloatingPlayer = () => {
     }
   };
 
+  const selectTrack = (index: number) => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPlaying(false);
+    setTrackIndex(index);
+  };
+
   if (!visible) return null;
 
   return (
     <>
-      <audio ref={audioRef} src="/aku-te-nigeria.mp3" loop preload="auto" />
+      <audio ref={audioRef} src={selectedTrack.src} loop preload="metadata" />
       <div
         className="fixed bottom-5 left-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
         style={{
-          background: "rgba(45,10,78,0.92)",
-          border: "1px solid rgba(201,151,42,0.35)",
+          background: "rgba(7,20,43,0.92)",
+          border: "1px solid rgba(215,183,103,0.34)",
           backdropFilter: "blur(12px)",
         }}
       >
@@ -50,17 +52,28 @@ const FloatingPlayer = () => {
         </div>
 
         <div className="leading-tight">
-          <p className="text-white text-xs font-bold">Aku Te Nigeria</p>
-          <p className="text-[#C9972A] text-[10px]">ILPC 2026 Anthem</p>
+          <p className="max-w-[170px] truncate text-white text-xs font-bold">{selectedTrack.label}</p>
+          <div className="mt-1 flex gap-1" aria-label="MTA audio playlist">
+            {mtaAudioTracks.map((track, index) => (
+              <button
+                key={track.id}
+                type="button"
+                onClick={() => selectTrack(index)}
+                className="h-1.5 w-5 rounded-full transition-colors"
+                style={{ background: index === trackIndex ? "#d7b767" : "rgba(255,255,255,0.22)" }}
+                aria-label={`Play ${track.label}`}
+              />
+            ))}
+          </div>
         </div>
 
         <button
           onClick={toggle}
-          className="w-8 h-8 rounded-full bg-[#C9972A]/20 hover:bg-[#C9972A]/40 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-full bg-[#d7b767]/18 hover:bg-[#d7b767]/34 flex items-center justify-center transition-colors"
         >
           {playing
-            ? <Pause className="w-3.5 h-3.5 text-[#C9972A]" />
-            : <Play className="w-3.5 h-3.5 text-[#C9972A] translate-x-px" />
+            ? <Pause className="w-3.5 h-3.5 text-[#d7b767]" />
+            : <Play className="w-3.5 h-3.5 text-[#d7b767] translate-x-px" />
           }
         </button>
 

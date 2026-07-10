@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Music, Headphones, Disc3, Play, Pause, Volume2 } from "lucide-react";
+import { mtaAudioTracks } from "@/lib/mtaAudioTracks";
 
 const SpotifySection = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -7,6 +8,8 @@ const SpotifySection = () => {
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const selectedTrack = mtaAudioTracks[trackIndex];
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -35,6 +38,18 @@ const SpotifySection = () => {
     setPlaying(!playing);
   };
 
+  const selectTrack = (index: number) => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPlaying(false);
+    setCurrent(0);
+    setDuration(0);
+    setTrackIndex(index);
+  };
+
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -56,45 +71,44 @@ const SpotifySection = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto mb-10">
-      <audio ref={audioRef} src="/aku-te-nigeria.mp3" preload="metadata" />
+      <audio ref={audioRef} src={selectedTrack.src} preload="metadata" />
 
       <div className="text-center mb-5">
-        <p className="text-[#C9972A] text-xs font-semibold tracking-widest uppercase mb-3">
+        <p className="mta-kicker mb-3">
           Listen Now
         </p>
         <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-          Tune Your Spirit
+          MTA 2026 Audio
         </h3>
         <p className="text-white/50 text-sm">
-          The official ILPC 2026 anthem — Aku Te Nigeria
+          A three-track MTA 2026 audio playlist — EXPLOITS
         </p>
       </div>
 
       <div
-        className="rounded-2xl overflow-hidden card-3d"
+        className="mta-glass overflow-hidden rounded-[1.75rem]"
         style={{
-          background: "linear-gradient(135deg, rgba(155,114,170,0.25) 0%, rgba(45,10,78,0.7) 50%, rgba(155,114,170,0.15) 100%)",
-          border: "1px solid rgba(155,114,170,0.3)",
+          background: "linear-gradient(145deg, rgba(15,42,105,0.78), rgba(43,23,104,0.72))",
         }}
       >
         {/* Header bar */}
         <div
           className="flex items-center justify-between px-5 py-3"
-          style={{ background: "rgba(155,114,170,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.055)" }}
         >
           <div className="flex items-center gap-2">
             <Disc3
-              className="w-5 h-5 text-[#1DB954]"
+              className="w-5 h-5 text-[#d7b767]"
               style={{ animation: playing ? "rotate-slow 3s linear infinite" : "none" }}
             />
-            <span className="text-[#B88FC7] text-xs font-bold tracking-wider uppercase">
+            <span className="text-[#c8b7ff] text-xs font-bold tracking-wider uppercase">
               Now Playing
             </span>
           </div>
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#1DB954]/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#C9972A]/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#9B72AA]/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#d7b767]/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#c8b7ff]/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/40" />
           </div>
         </div>
 
@@ -104,7 +118,7 @@ const SpotifySection = () => {
           <div className="relative mb-6">
             <div
               className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl mx-auto flex items-center justify-center relative overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #9B72AA 0%, #2D0A4E 50%, #C9972A 100%)" }}
+              style={{ background: "linear-gradient(145deg, #0b1f4d 0%, #442a85 55%, #d7b767 100%)" }}
             >
               <Music className="w-12 h-12 sm:w-14 sm:h-14 text-white/30" />
               {playing && (
@@ -123,10 +137,28 @@ const SpotifySection = () => {
           </div>
 
           {/* Track info */}
-          <p className="text-white font-bold text-base mb-1">Aku Te Nigeria</p>
-          <p className="text-[#B88FC7] text-xs font-medium tracking-wider uppercase mb-5">
-            ILPC 2026 — Fresh Oil for a New Season
+          <p className="text-white font-bold text-base mb-1">{selectedTrack.label}</p>
+          <p className="text-[#c8b7ff] text-xs font-medium tracking-wider uppercase mb-5">
+            Official MTA Audio
           </p>
+
+          <div className="mb-5 grid gap-2">
+            {mtaAudioTracks.map((track, index) => (
+              <button
+                key={track.id}
+                type="button"
+                onClick={() => selectTrack(index)}
+                className="rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors"
+                style={{
+                  background: index === trackIndex ? "rgba(215,183,103,0.18)" : "rgba(255,255,255,0.04)",
+                  border: index === trackIndex ? "1px solid rgba(215,183,103,0.46)" : "1px solid rgba(255,255,255,0.08)",
+                  color: index === trackIndex ? "#F7E8B5" : "rgba(255,255,255,0.62)",
+                }}
+              >
+                {track.label}
+              </button>
+            ))}
+          </div>
 
           {/* Progress bar */}
           <div className="mb-1">
@@ -137,7 +169,7 @@ const SpotifySection = () => {
               value={current}
               onChange={seek}
               className="w-full h-1 rounded-full appearance-none cursor-pointer"
-              style={{ accentColor: "#C9972A" }}
+              style={{ accentColor: "#d7b767" }}
             />
           </div>
           <div className="flex justify-between text-[10px] text-white/30 mb-5">
@@ -149,7 +181,7 @@ const SpotifySection = () => {
           <div className="flex items-center justify-center gap-6 mb-5">
             <button
               onClick={togglePlay}
-              className="w-14 h-14 rounded-full gold-gradient flex items-center justify-center text-[#2D0A4E] hover:scale-110 transition-transform shadow-lg shadow-[#C9972A]/20"
+              className="w-14 h-14 rounded-full gold-gradient flex items-center justify-center text-[#07142b] hover:scale-110 transition-transform shadow-lg shadow-[#d7b767]/20"
             >
               {playing ? <Pause size={22} /> : <Play size={22} className="translate-x-0.5" />}
             </button>
@@ -157,7 +189,7 @@ const SpotifySection = () => {
 
           {/* Volume */}
           <div className="flex items-center gap-3 justify-center">
-            <Volume2 className="w-4 h-4 text-[#B88FC7]" />
+            <Volume2 className="w-4 h-4 text-[#c8b7ff]" />
             <input
               type="range"
               min={0}
@@ -166,7 +198,7 @@ const SpotifySection = () => {
               value={volume}
               onChange={changeVolume}
               className="w-28 h-1 rounded-full appearance-none cursor-pointer"
-              style={{ accentColor: "#C9972A" }}
+              style={{ accentColor: "#d7b767" }}
             />
           </div>
         </div>
