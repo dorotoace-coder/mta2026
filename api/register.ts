@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 import QRCode from "qrcode";
+import { normalizeEmail, normalizeFullName } from "./_lib/mtaRegistrationIdentity.js";
 
 // ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
@@ -61,6 +62,51 @@ const normalizeFastCommitment = (value: unknown): "yes" | "try" | "no" => {
   return "no";
 };
 
+const DUPLICATE_REGISTRATION_RESPONSE = {
+  success: false,
+  code: "DUPLICATE_REGISTRATION",
+  message: "A registration already exists for this attendee.",
+};
+
+/** Raised when the database's composite unique index rejects an insert (23505). */
+class DuplicateRegistrationError extends Error {
+  constructor() {
+    super("Composite registration identity already exists");
+    this.name = "DuplicateRegistrationError";
+  }
+}
+
+/**
+ * User-experience-only pre-check via a SECURITY DEFINER RPC that returns a
+ * boolean only (never row contents) — the anon role has no SELECT grant on
+ * mta_registrations. The composite unique index remains the authoritative,
+ * race-safe control; this call never blocks registration on its own error.
+ */
+async function checkDuplicateRegistration(email: string, fullName: string): Promise<boolean> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/mta_registration_composite_exists`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey as string,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_email: normalizeEmail(email),
+        p_full_name: normalizeFullName(fullName),
+      }),
+    });
+    if (!resp.ok) return false;
+    const result = await resp.json();
+    return result === true;
+  } catch (err) {
+    console.error("[register] duplicate pre-check failed (non-fatal, DB index remains authoritative):", err);
+    return false;
+  }
+}
+
 /** Write the registration to Supabase as first-class columns. Throws on failure. */
 async function saveToSupabase(data: Registration): Promise<void> {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -97,6 +143,17 @@ async function saveToSupabase(data: Registration): Promise<void> {
 
   if (!resp.ok) {
     const body = await resp.text();
+    let parsedCode: string | undefined;
+    try {
+      parsedCode = JSON.parse(body)?.code;
+    } catch {
+      // body wasn't JSON — fall through to the generic failure path below.
+    }
+    if (resp.status === 409 && parsedCode === "23505") {
+      // Authoritative composite unique-index rejection (race-condition
+      // collision, or the pre-check missed it for any reason).
+      throw new DuplicateRegistrationError();
+    }
     if (isPreview) {
       console.error(
         "[register] SUPABASE_INSERT_DIAGNOSTIC",
@@ -162,6 +219,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const normalizedFastCommitment = normalizeFastCommitment(fastCommitment);
 
+  // ── Composite duplicate pre-check (UX only — the database's composite
+  //    unique index is the authoritative, race-safe control below). ──
+  if (await checkDuplicateRegistration(email, fullName)) {
+    return res.status(409).json(DUPLICATE_REGISTRATION_RESPONSE);
+  }
+
   const submittedAt = new Date().toISOString();
   const registrationId = randomUUID();
   const checkInUrl = `${getAppOrigin()}/checkin/${registrationId}`;
@@ -187,6 +250,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await saveToSupabase(reg);
   } catch (err) {
+    if (err instanceof DuplicateRegistrationError) {
+      // Race-condition collision the pre-check missed — same response as
+      // the pre-check path, no email, no fallback capture. This is a
+      // correctly-blocked resubmission, not a failure to capture.
+      return res.status(409).json(DUPLICATE_REGISTRATION_RESPONSE);
+    }
     dbFailed = true;
     dbError = err instanceof Error ? err.message : String(err);
     console.error(`[register] DB write FAILED for ${email}: ${dbError}`);
