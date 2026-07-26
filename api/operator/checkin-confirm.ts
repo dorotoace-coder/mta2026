@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "crypto";
-import { isOperatorAuthorized } from "../_lib/mtaOperatorAuth.js";
+import { isOperatorAuthorized, isKnownOperator } from "../_lib/mtaOperatorAuth.js";
+import { EVENT_DATES, isValidEventDate, todayInLagos } from "../_lib/mtaEventCalendar.js";
 
 const REG_TABLE = "mta_registrations";
 const ATTENDANCE_TABLE = "mta_event_attendance";
@@ -14,11 +15,11 @@ type Body = {
   registrationId?: string;
   method?: string;
   operator?: string;
-  confirmDuplicate?: boolean;
+  eventDate?: string;
 };
 
 type SafeRegistration = { id: string; full_name: string; attendance_mode: string };
-type ExistingAttendance = { id: string; checked_in_at: string; checked_in_by: string };
+type ExistingAttendance = { id: string; checked_in_at: string; checked_in_by: string; event_date: string };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
@@ -38,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
-  const { registrationId, method, operator, confirmDuplicate } = (req.body ?? {}) as Body;
+  const { registrationId, method, operator, eventDate } = (req.body ?? {}) as Body;
 
   if (typeof registrationId !== "string" || !UUID_RE.test(registrationId)) {
     return res.status(400).json({ success: false, error: "Invalid registrationId" });
@@ -48,6 +49,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (typeof operator !== "string" || operator.trim().length === 0) {
     return res.status(400).json({ success: false, error: "operator is required" });
+  }
+  const operatorId = operator.trim();
+
+  const { allowed, enforced } = isKnownOperator(operatorId);
+  if (enforced && !allowed) {
+    return res.status(403).json({
+      success: false,
+      code: "UNKNOWN_OPERATOR",
+      error: "operator is not on the configured allow-list.",
+    });
+  }
+
+  // Multi-day: default to today in Africa/Lagos, but allow (and require,
+  // outside the live event window) an explicit event_date.
+  const resolvedEventDate = eventDate !== undefined ? eventDate : todayInLagos();
+  if (!isValidEventDate(resolvedEventDate)) {
+    return res.status(400).json({
+      success: false,
+      error: `eventDate must be one of ${EVENT_DATES.join(", ")}`,
+      valid_event_dates: EVENT_DATES,
+    });
   }
 
   const supabaseUrl = cleanSupabaseUrl(process.env.SUPABASE_URL);
@@ -90,37 +112,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(404).json({ success: false, code: "NOT_FOUND", error: "No registration found for this ID." });
   }
 
-  // 2. Duplicate-scan check — an existing, non-reversed attendance row means
-  //    this person is already checked in. Surface that distinctly instead of
-  //    silently inserting a second row, unless the operator explicitly
-  //    confirms a deliberate second entry (e.g. re-entry after stepping out).
-  try {
-    const existingUrl =
-      `${supabaseUrl}/rest/v1/${ATTENDANCE_TABLE}?registration_id=eq.${encodeURIComponent(registrationId)}` +
-      "&reversed=eq.false&select=id,checked_in_at,checked_in_by&order=checked_in_at.desc&limit=1";
-    const existingResp = await fetch(existingUrl, { method: "GET", headers: authHeaders });
-    if (!existingResp.ok) {
-      const body = await existingResp.text();
-      console.error(
-        "[operator/checkin-confirm] attendance lookup failed",
-        JSON.stringify({ status: existingResp.status, body })
-      );
-      return res.status(502).json({ success: false, error: "Attendance lookup failed." });
-    }
-    const existingRows = (await existingResp.json()) as ExistingAttendance[];
-    const existing = existingRows[0];
-    if (existing && confirmDuplicate !== true) {
-      return res.status(200).json({ success: false, code: "ALREADY_CHECKED_IN", already: existing });
-    }
-  } catch (error) {
-    console.error("[operator/checkin-confirm] attendance lookup exception", error);
-    return res.status(502).json({ success: false, error: "Attendance lookup failed." });
-  }
-
-  // 3. Write the attendance row.
+  // 2. Atomic, duplicate-safe write. The database's partial unique index
+  //    on (registration_id, event_date) WHERE reversed = false is the
+  //    sole authority on whether this is a duplicate — there is no
+  //    separate read-then-write pre-check to race against. A concurrent
+  //    second confirm for the same registrant/day fails here with a
+  //    unique-violation (23505), which is interpreted as an expected,
+  //    already-checked-in outcome rather than a server error.
   const attendanceId = randomUUID();
   const checkedInAt = new Date().toISOString();
-  const operatorId = operator.trim();
   try {
     const insertResp = await fetch(`${supabaseUrl}/rest/v1/${ATTENDANCE_TABLE}`, {
       method: "POST",
@@ -128,6 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         id: attendanceId,
         registration_id: registrationId,
+        event_date: resolvedEventDate,
         checked_in_at: checkedInAt,
         checked_in_by: operatorId,
         method,
@@ -136,6 +137,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!insertResp.ok) {
       const body = await insertResp.text();
+      let parsedCode: string | undefined;
+      try {
+        parsedCode = JSON.parse(body)?.code;
+      } catch {
+        // body wasn't JSON — fall through to the generic failure path below.
+      }
+
+      if (insertResp.status === 409 && parsedCode === "23505") {
+        // Authoritative unique-index rejection: this registrant already
+        // has an active check-in for this event_date. Fetch it for a
+        // useful response — this read is for messaging only, it does
+        // not participate in the atomicity guarantee above.
+        const existingUrl =
+          `${supabaseUrl}/rest/v1/${ATTENDANCE_TABLE}?registration_id=eq.${encodeURIComponent(registrationId)}` +
+          `&event_date=eq.${resolvedEventDate}&reversed=eq.false` +
+          "&select=id,checked_in_at,checked_in_by,event_date&limit=1";
+        const existingResp = await fetch(existingUrl, { method: "GET", headers: authHeaders });
+        const existingRows = existingResp.ok ? ((await existingResp.json()) as ExistingAttendance[]) : [];
+        return res.status(200).json({
+          success: false,
+          code: "ALREADY_CHECKED_IN",
+          already: existingRows[0] ?? { event_date: resolvedEventDate },
+        });
+      }
+
       console.error(
         "[operator/checkin-confirm] attendance insert failed",
         JSON.stringify({ status: insertResp.status, body })
@@ -152,6 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     attendance: {
       id: attendanceId,
       registration_id: registrationId,
+      event_date: resolvedEventDate,
       full_name: registration.full_name,
       attendance_mode: registration.attendance_mode,
       checked_in_at: checkedInAt,
