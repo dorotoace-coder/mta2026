@@ -86,6 +86,28 @@ describe("api/operator/checkin-confirm", () => {
     expect(status).toHaveBeenCalledWith(400);
   });
 
+  it("returns 400 for an empty-string operator", async () => {
+    const handler = (await import("../../../api/operator/checkin-confirm")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { registrationId: VALID_ID, method: "qr_scan", operator: "", eventDate: DAY1 },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a whitespace-only operator", async () => {
+    const handler = (await import("../../../api/operator/checkin-confirm")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { registrationId: VALID_ID, method: "qr_scan", operator: "   ", eventDate: DAY1 },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns 400 for an eventDate outside the event window", async () => {
     const handler = (await import("../../../api/operator/checkin-confirm")).default;
     const { req, res, status, json } = makeReqRes({

@@ -49,6 +49,50 @@ describe("api/operator/checkin-reverse", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("returns 400 for an empty-string note", async () => {
+    const handler = (await import("../../../api/operator/checkin-reverse")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { attendanceId: VALID_ID, operator: "Vol1", note: "" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a whitespace-only note", async () => {
+    const handler = (await import("../../../api/operator/checkin-reverse")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { attendanceId: VALID_ID, operator: "Vol1", note: "   " },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for an empty-string operator", async () => {
+    const handler = (await import("../../../api/operator/checkin-reverse")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { attendanceId: VALID_ID, operator: "", note: "Mistaken scan" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a whitespace-only operator", async () => {
+    const handler = (await import("../../../api/operator/checkin-reverse")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      body: { attendanceId: VALID_ID, operator: "   ", note: "Mistaken scan" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns 403 UNKNOWN_OPERATOR when an allow-list is configured and the operator is not on it", async () => {
     process.env.MTA_CHECKIN_OPERATOR_IDS = "RuthAnozie";
     const handler = (await import("../../../api/operator/checkin-reverse")).default;
