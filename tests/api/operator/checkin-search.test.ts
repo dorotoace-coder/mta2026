@@ -15,6 +15,7 @@ function makeReqRes(opts: { headers?: Record<string, string>; query?: Record<str
 }
 
 const SECRET = "test-operator-secret";
+const VALID_ID = "33333333-3333-4333-8333-333333333333";
 
 describe("api/operator/checkin-search", () => {
   const originalEnv = { ...process.env };
@@ -81,6 +82,39 @@ describe("api/operator/checkin-search", () => {
     expect(json).toHaveBeenCalledWith({
       success: true,
       results: [{ id: "reg-1", full_name: "Synthetic Tester", attendance_mode: "in_person" }],
+    });
+  });
+
+  it("returns 400 for an invalid registrationId", async () => {
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { registrationId: "not-a-uuid" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("performs an exact-ID lookup (used to resolve a scanned QR code) instead of the fuzzy search when registrationId is provided", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      expect(url).toContain(`id=eq.${VALID_ID}`);
+      expect(url).not.toContain("ilike");
+      return Promise.resolve({
+        ok: true,
+        json: async () => [{ id: VALID_ID, full_name: "Scanned Registrant", attendance_mode: "online" }],
+      } as Response);
+    });
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status, json } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { registrationId: VALID_ID },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(200);
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      results: [{ id: VALID_ID, full_name: "Scanned Registrant", attendance_mode: "online" }],
     });
   });
 });
