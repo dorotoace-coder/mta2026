@@ -295,4 +295,154 @@ describe("OperatorCheckIn", () => {
 
     await waitFor(() => expect(screen.getByText(/System temporarily unavailable/)).toBeTruthy());
   });
+
+  // ── Defect 1: cross-day override must not persist into the next participant ──
+
+  it("regression: a cross-day supervisor override does not persist into the next participant", async () => {
+    const REG_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const confirmBodies: Array<Record<string, unknown>> = [];
+    routes.searchById = (url: string) =>
+      jsonResponse(200, {
+        success: true,
+        results: [
+          url.includes(REG_B)
+            ? { id: REG_B, full_name: "Participant B", attendance_mode: "in_person" }
+            : { id: REG_ID, full_name: "Participant A", attendance_mode: "in_person" },
+        ],
+      });
+    routes.confirm = (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string);
+      confirmBodies.push(body);
+      return jsonResponse(201, { success: true, attendance: { full_name: body.registrationId === REG_ID ? "Participant A" : "Participant B", event_date: body.eventDate } });
+    };
+
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    // Participant A: override to Day 2.
+    fireEvent.click(screen.getByText("Scan QR"));
+    capturedOnDecoded!(`https://mta.heartbeatofgod.ca/checkin/${REG_ID}`);
+    await screen.findByText("Participant A");
+    expect(screen.getByText("Day 1 — Fri, Sept 4")).toBeTruthy(); // default before any override
+
+    fireEvent.click(screen.getByText(/Wrong day\? Supervisor override/));
+    fireEvent.click(screen.getByText("Day 2 — Sat, Sept 5"));
+    fireEvent.click(screen.getByText("Yes, override"));
+    await screen.findAllByText("Day 2 — Sat, Sept 5");
+
+    fireEvent.click(screen.getByText("Check In"));
+    await screen.findByText("Checked in — Day 2 — Sat, Sept 5");
+    expect(confirmBodies[0]).toMatchObject({ registrationId: REG_ID, eventDate: "2026-09-05" });
+
+    // Return home for the next participant.
+    fireEvent.click(screen.getByText("Scan Next"));
+    await screen.findByText("Scan QR");
+
+    // Participant B: the day must have reverted to the default — no
+    // override should be silently inherited from A.
+    fireEvent.click(screen.getByText("Scan QR"));
+    capturedOnDecoded!(`https://mta.heartbeatofgod.ca/checkin/${REG_B}`);
+    await screen.findByText("Participant B");
+    expect(screen.getByText("Day 1 — Fri, Sept 4")).toBeTruthy();
+    expect(screen.queryByText("Day 2 — Sat, Sept 5")).toBeNull();
+
+    fireEvent.click(screen.getByText("Check In"));
+    await waitFor(() => expect(confirmBodies).toHaveLength(2));
+    expect(confirmBodies[1]).toMatchObject({ registrationId: REG_B, eventDate: "2026-09-04" });
+  });
+
+  // ── Defect 3: scanner intent must not survive sign-out / session reset ──
+
+  it("signing out while scanning stops scanner intent, and signing back in does not auto-start it", async () => {
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.click(screen.getByText("Scan QR"));
+    expect(capturedActive).toBe(true);
+
+    fireEvent.click(screen.getByText("Sign out"));
+    await screen.findByText("Operator Sign-In");
+    expect(capturedActive).toBe(false);
+
+    await signIn();
+    expect(screen.getByText("Scan QR")).toBeTruthy();
+    expect(capturedActive).toBe(false);
+  });
+
+  it("an unauthorized-session reset while scanning stops scanner intent, and re-sign-in does not auto-start it", async () => {
+    routes.searchByQuery = () => jsonResponse(401, { success: false, error: "Unauthorized" });
+
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.click(screen.getByText("Scan QR"));
+    expect(capturedActive).toBe(true);
+
+    fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "anything" } });
+    fireEvent.click(screen.getByRole("button", { name: "" }));
+    await screen.findByText("Operator Sign-In");
+    expect(capturedActive).toBe(false);
+
+    await signIn();
+    expect(screen.getByText("Scan QR")).toBeTruthy();
+    expect(capturedActive).toBe(false);
+  });
+
+  // ── Defect 4: the session-reset explanation must be visible on the sign-in screen, then clear ──
+
+  it("shows the exact session-expiry explanation on the sign-in screen after a 401 reset", async () => {
+    routes.searchByQuery = () => jsonResponse(401, { success: false, error: "Unauthorized" });
+
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "anything" } });
+    fireEvent.click(screen.getByRole("button", { name: "" }));
+
+    await screen.findByText("Your session is no longer valid. Please sign in again.");
+  });
+
+  it("shows the exact operator-not-recognized explanation on the sign-in screen after a 403 reset", async () => {
+    routes.searchByQuery = () => jsonResponse(403, { success: false, code: "UNKNOWN_OPERATOR" });
+
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "anything" } });
+    fireEvent.click(screen.getByRole("button", { name: "" }));
+
+    await screen.findByText("Your operator ID is no longer recognized. Please sign in again.");
+  });
+
+  it("the session-expiry notice does not remain after a successful reauthentication", async () => {
+    routes.searchByQuery = () => jsonResponse(401, { success: false, error: "Unauthorized" });
+
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "anything" } });
+    fireEvent.click(screen.getByRole("button", { name: "" }));
+    await screen.findByText("Your session is no longer valid. Please sign in again.");
+
+    await signIn();
+    expect(screen.queryByText("Your session is no longer valid. Please sign in again.")).toBeNull();
+  });
+
+  it("a plain manual sign-out shows no stale session-expiry notice", async () => {
+    render(<OperatorCheckIn />);
+    await screen.findByPlaceholderText("Operator secret");
+    await signIn();
+
+    fireEvent.click(screen.getByText("Sign out"));
+    await screen.findByText("Operator Sign-In");
+
+    expect(screen.queryByText(/session is no longer valid/)).toBeNull();
+    expect(screen.queryByText(/no longer recognized/)).toBeNull();
+  });
 });

@@ -58,7 +58,13 @@ const eventDateLabel = (date: string) => {
 
 const SYSTEM_UNAVAILABLE = "System temporarily unavailable. Please try again shortly.";
 
-function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession) => void }) {
+function OperatorSignIn({
+  authNotice,
+  onSignedIn,
+}: {
+  authNotice: string | null;
+  onSignedIn: (session: OperatorSession) => void;
+}) {
   const [secret, setSecret] = useState("");
   const [operatorId, setOperatorId] = useState("");
   const [checking, setChecking] = useState(false);
@@ -77,6 +83,10 @@ function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession)
     onSignedIn(candidate);
   };
 
+  // A fresh submit failure is more relevant than a stale reason for
+  // being here, so it takes precedence once the operator has tried.
+  const displayMessage = error ?? authNotice;
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#05060b] px-5 py-10 text-white">
       <div className="w-full max-w-sm space-y-6">
@@ -87,9 +97,9 @@ function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession)
             One-time setup for this device. Ask the records officer for the operator secret and your operator ID.
           </p>
         </div>
-        {error && (
+        {displayMessage && (
           <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {error}
+            {displayMessage}
           </div>
         )}
         <div className="space-y-3">
@@ -134,10 +144,33 @@ export default function OperatorCheckIn() {
   const [showReversalForm, setShowReversalForm] = useState(false);
   const [reverseReason, setReverseReason] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setSession(loadOperatorSession());
-    setSessionLoaded(true);
+    let cancelled = false;
+    (async () => {
+      const stored = loadOperatorSession();
+      if (!stored) {
+        if (!cancelled) setSessionLoaded(true);
+        return;
+      }
+      // A session left in sessionStorage from an earlier tab/reload may
+      // have since been revoked (secret rotated, operator ID removed
+      // from the allow-list) — revalidate before ever showing the
+      // operator home screen with it.
+      const result = await validateOperatorSession(stored);
+      if (cancelled) return;
+      if (result.ok === false) {
+        clearOperatorSession();
+        setSession(null);
+      } else {
+        setSession(stored);
+      }
+      setSessionLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const goHome = useCallback(() => {
@@ -149,6 +182,8 @@ export default function OperatorCheckIn() {
     setReverseReason("");
     setDayOverrideOpen(false);
     setPendingOverrideDate(null);
+    setEventDate(defaultEventDate());
+    setShowScanner(false);
   }, []);
 
   const resetToSignIn = useCallback(
@@ -156,7 +191,7 @@ export default function OperatorCheckIn() {
       clearOperatorSession();
       setSession(null);
       goHome();
-      setErrorMessage(message);
+      setAuthNotice(message || null);
     },
     [goHome],
   );
@@ -196,7 +231,7 @@ export default function OperatorCheckIn() {
       try {
         const resp = await operatorFetch(
           session,
-          `/api/operator/checkin-search?registrationId=${encodeURIComponent(registrationId)}`,
+          `/api/operator/checkin-search?registrationId=${encodeURIComponent(registrationId)}&operator=${encodeURIComponent(session.operatorId)}`,
         );
         const data = await resp.json();
         if (handleSharedFailure(resp.status)) return;
@@ -241,7 +276,10 @@ export default function OperatorCheckIn() {
     setSearchLoading(true);
     setErrorMessage(null);
     try {
-      const resp = await operatorFetch(session, `/api/operator/checkin-search?query=${encodeURIComponent(searchQuery.trim())}`);
+      const resp = await operatorFetch(
+        session,
+        `/api/operator/checkin-search?query=${encodeURIComponent(searchQuery.trim())}&operator=${encodeURIComponent(session.operatorId)}`,
+      );
       const data = await resp.json();
       if (handleSharedFailure(resp.status)) return;
       if (!resp.ok || !data.success) {
@@ -358,7 +396,16 @@ export default function OperatorCheckIn() {
   if (!sessionLoaded) return null;
 
   if (!session) {
-    return <OperatorSignIn onSignedIn={(s) => { saveOperatorSession(s); setSession(s); }} />;
+    return (
+      <OperatorSignIn
+        authNotice={authNotice}
+        onSignedIn={(s) => {
+          saveOperatorSession(s);
+          setSession(s);
+          setAuthNotice(null);
+        }}
+      />
+    );
   }
 
   return (

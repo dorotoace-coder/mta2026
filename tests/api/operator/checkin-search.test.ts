@@ -16,6 +16,7 @@ function makeReqRes(opts: { headers?: Record<string, string>; query?: Record<str
 
 const SECRET = "test-operator-secret";
 const VALID_ID = "33333333-3333-4333-8333-333333333333";
+const OPERATOR = "Vol1";
 
 describe("api/operator/checkin-search", () => {
   const originalEnv = { ...process.env };
@@ -25,6 +26,7 @@ describe("api/operator/checkin-search", () => {
     process.env.SUPABASE_URL = "https://staging.example.invalid";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     process.env.MTA_CHECKIN_OPERATOR_SECRET = SECRET;
+    delete process.env.MTA_CHECKIN_OPERATOR_IDS;
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     vi.resetModules();
@@ -39,7 +41,7 @@ describe("api/operator/checkin-search", () => {
   it("returns 503 when not configured", async () => {
     delete process.env.MTA_CHECKIN_OPERATOR_SECRET;
     const handler = (await import("../../../api/operator/checkin-search")).default;
-    const { req, res, status } = makeReqRes({ query: { query: "Synthetic" } });
+    const { req, res, status } = makeReqRes({ query: { query: "Synthetic", operator: OPERATOR } });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(503);
   });
@@ -48,17 +50,66 @@ describe("api/operator/checkin-search", () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, status } = makeReqRes({
       headers: { authorization: "Bearer wrong" },
-      query: { query: "Synthetic" },
+      query: { query: "Synthetic", operator: OPERATOR },
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(401);
+  });
+
+  it("returns 400 when operator is missing, even with a valid secret", async () => {
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { query: "Synthetic" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 UNKNOWN_OPERATOR when an allow-list is configured and the operator is not on it — a revoked operator loses read access immediately, not only on the next write", async () => {
+    process.env.MTA_CHECKIN_OPERATOR_IDS = "RuthAnozie";
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status, json } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { query: "Synthetic", operator: "RemovedOperator" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(403);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: "UNKNOWN_OPERATOR" }));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 UNKNOWN_OPERATOR for an exact-ID (QR) lookup too, not only fuzzy search", async () => {
+    process.env.MTA_CHECKIN_OPERATOR_IDS = "RuthAnozie";
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status, json } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { registrationId: VALID_ID, operator: "RemovedOperator" },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(403);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: "UNKNOWN_OPERATOR" }));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("allows the request when the operator is on the configured allow-list", async () => {
+    process.env.MTA_CHECKIN_OPERATOR_IDS = "RuthAnozie,Vol1";
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] } as Response);
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, status } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { query: "Synthetic", operator: OPERATOR },
+    });
+    await handler(req, res);
+    expect(status).toHaveBeenCalledWith(200);
   });
 
   it("returns 400 for a query shorter than 2 characters", async () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, status } = makeReqRes({
       headers: { authorization: `Bearer ${SECRET}` },
-      query: { query: "a" },
+      query: { query: "a", operator: OPERATOR },
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(400);
@@ -83,7 +134,7 @@ describe("api/operator/checkin-search", () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, status, json } = makeReqRes({
       headers: { authorization: `Bearer ${SECRET}` },
-      query: { query: "Synthetic" },
+      query: { query: "Synthetic", operator: OPERATOR },
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(200);
@@ -115,7 +166,7 @@ describe("api/operator/checkin-search", () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, json } = makeReqRes({
       headers: { authorization: `Bearer ${SECRET}` },
-      query: { query: "No Email" },
+      query: { query: "No Email", operator: OPERATOR },
     });
     await handler(req, res);
     expect(json).toHaveBeenCalledWith({
@@ -130,7 +181,7 @@ describe("api/operator/checkin-search", () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, status } = makeReqRes({
       headers: { authorization: `Bearer ${SECRET}` },
-      query: { registrationId: "not-a-uuid" },
+      query: { registrationId: "not-a-uuid", operator: OPERATOR },
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(400);
@@ -149,7 +200,7 @@ describe("api/operator/checkin-search", () => {
     const handler = (await import("../../../api/operator/checkin-search")).default;
     const { req, res, status, json } = makeReqRes({
       headers: { authorization: `Bearer ${SECRET}` },
-      query: { registrationId: VALID_ID },
+      query: { registrationId: VALID_ID, operator: OPERATOR },
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(200);

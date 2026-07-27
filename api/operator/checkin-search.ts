@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { isOperatorAuthorized } from "../_lib/mtaOperatorAuth.js";
+import { isOperatorAuthorized, isKnownOperator } from "../_lib/mtaOperatorAuth.js";
 
 const REG_TABLE = "mta_registrations";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -62,6 +62,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!authorized) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
+  // The shared secret alone only proves the caller holds a valid
+  // device credential — it does not identify who. Every search
+  // (including the exact-ID lookup a QR scan uses) must also carry a
+  // still-allow-listed operator ID, so a session revoked by removing
+  // its operator from MTA_CHECKIN_OPERATOR_IDS loses read access
+  // immediately, not only the next time it tries to write.
+  const rawOperator = Array.isArray(req.query.operator) ? req.query.operator[0] : req.query.operator;
+  const operator = typeof rawOperator === "string" ? rawOperator.trim() : "";
+  if (!operator) {
+    return res.status(400).json({ success: false, error: "operator is required" });
+  }
+  const { allowed, enforced } = isKnownOperator(operator);
+  if (enforced && !allowed) {
+    return res.status(403).json({
+      success: false,
+      code: "UNKNOWN_OPERATOR",
+      error: "operator is not on the configured allow-list.",
+    });
   }
 
   const rawRegistrationId = Array.isArray(req.query.registrationId)
