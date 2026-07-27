@@ -10,10 +10,41 @@ type SafeRegistration = {
   attendance_mode: string;
 };
 
+type SearchRow = SafeRegistration & { email?: string | null; phone?: string | null };
+type SafeSearchResult = SafeRegistration & { masked_contact: string | null };
+
 const cleanSupabaseUrl = (value: string | undefined) => value?.replace(/\/+$/, "");
 
 /** Strip characters that would break PostgREST's or=(...) filter grouping. */
 const sanitizeSearchTerm = (value: string) => value.replace(/[,()]/g, "");
+
+/** j***@example.com — enough to disambiguate duplicate names, nothing more. */
+const maskEmail = (email: string): string => {
+  const [user, domain] = email.split("@");
+  if (!user || !domain) return "•••";
+  return `${user.slice(0, 1)}${"•".repeat(Math.max(user.length - 1, 2))}@${domain}`;
+};
+
+/** •••-•••-1234 — last four digits only. */
+const maskPhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 4) return "•••";
+  return `•••-•••-${digits.slice(-4)}`;
+};
+
+/**
+ * Adds a privacy-safe masked identifier for disambiguating duplicate
+ * names in fuzzy search results, then strips the raw email/phone that
+ * were only fetched to compute it — the client never receives full
+ * contact details from this endpoint.
+ */
+const toSafeSearchResults = (rows: SearchRow[]): SafeSearchResult[] =>
+  rows.map(({ id, full_name, attendance_mode, email, phone }) => ({
+    id,
+    full_name,
+    attendance_mode,
+    masked_contact: email ? maskEmail(email) : phone ? maskPhone(phone) : null,
+  }));
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
@@ -56,15 +87,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Exact-ID lookup (used to resolve a scanned QR code to a name for the
-  // confirmation screen) takes precedence over the fuzzy name/email/phone
-  // search when both are somehow present.
-  const lookupUrl = registrationId
+  // confirmation screen) already identifies a single, unique registrant,
+  // so no disambiguation field is needed. The fuzzy name/email/phone
+  // search can return multiple same-named people, so it additionally
+  // fetches email/phone server-side only to compute a masked
+  // disambiguation string — never to expose full contact details.
+  const isExactLookup = Boolean(registrationId);
+  const lookupUrl = isExactLookup
     ? `${supabaseUrl}/rest/v1/${REG_TABLE}?id=eq.${encodeURIComponent(registrationId)}` +
       "&select=id,full_name,attendance_mode&limit=1"
     : (() => {
         const term = encodeURIComponent(sanitizeSearchTerm(query));
         const orFilter = `or=(full_name.ilike.*${term}*,email.ilike.*${term}*,phone.ilike.*${term}*)`;
-        return `${supabaseUrl}/rest/v1/${REG_TABLE}?${orFilter}&select=id,full_name,attendance_mode&limit=10`;
+        return `${supabaseUrl}/rest/v1/${REG_TABLE}?${orFilter}&select=id,full_name,attendance_mode,email,phone&limit=10`;
       })();
 
   try {
@@ -86,8 +121,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ success: false, error: "Search failed." });
     }
 
-    const rows = (await lookup.json()) as SafeRegistration[];
-    return res.status(200).json({ success: true, results: rows });
+    if (isExactLookup) {
+      const rows = (await lookup.json()) as SafeRegistration[];
+      return res.status(200).json({ success: true, results: rows });
+    }
+
+    const rows = (await lookup.json()) as SearchRow[];
+    return res.status(200).json({ success: true, results: toSafeSearchResults(rows) });
   } catch (error) {
     console.error("[operator/checkin-search] Lookup exception", error);
     return res.status(502).json({ success: false, error: "Search failed." });

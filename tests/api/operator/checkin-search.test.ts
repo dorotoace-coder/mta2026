@@ -64,12 +64,20 @@ describe("api/operator/checkin-search", () => {
     expect(status).toHaveBeenCalledWith(400);
   });
 
-  it("returns matching registrations with only the minimum-necessary fields", async () => {
+  it("returns fuzzy-search matches with a masked email as the disambiguation field, never the raw email", async () => {
     fetchMock.mockImplementation((url: string) => {
-      expect(url).toContain("select=id,full_name,attendance_mode");
+      expect(url).toContain("select=id,full_name,attendance_mode,email,phone");
       return Promise.resolve({
         ok: true,
-        json: async () => [{ id: "reg-1", full_name: "Synthetic Tester", attendance_mode: "in_person" }],
+        json: async () => [
+          {
+            id: "reg-1",
+            full_name: "Synthetic Tester",
+            attendance_mode: "in_person",
+            email: "jane.doe@example.invalid",
+            phone: "000-000-1234",
+          },
+        ],
       } as Response);
     });
     const handler = (await import("../../../api/operator/checkin-search")).default;
@@ -79,9 +87,42 @@ describe("api/operator/checkin-search", () => {
     });
     await handler(req, res);
     expect(status).toHaveBeenCalledWith(200);
+    const payload = json.mock.calls[0][0];
+    expect(payload).toEqual({
+      success: true,
+      results: [
+        {
+          id: "reg-1",
+          full_name: "Synthetic Tester",
+          attendance_mode: "in_person",
+          masked_contact: "j•••••••@example.invalid",
+        },
+      ],
+    });
+    expect(JSON.stringify(payload)).not.toContain("jane.doe@example.invalid");
+    expect(JSON.stringify(payload)).not.toContain("000-000-1234");
+  });
+
+  it("falls back to a masked phone when a result has no email", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => [
+          { id: "reg-2", full_name: "No Email Tester", attendance_mode: "online", email: null, phone: "555-123-4567" },
+        ],
+      } as Response)
+    );
+    const handler = (await import("../../../api/operator/checkin-search")).default;
+    const { req, res, json } = makeReqRes({
+      headers: { authorization: `Bearer ${SECRET}` },
+      query: { query: "No Email" },
+    });
+    await handler(req, res);
     expect(json).toHaveBeenCalledWith({
       success: true,
-      results: [{ id: "reg-1", full_name: "Synthetic Tester", attendance_mode: "in_person" }],
+      results: [
+        { id: "reg-2", full_name: "No Email Tester", attendance_mode: "online", masked_contact: "•••-•••-4567" },
+      ],
     });
   });
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Camera, CheckCircle2, RotateCcw, Search, ShieldAlert, X } from "lucide-react";
+import { Camera, CheckCircle2, RotateCcw, Search, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import {
   loadOperatorSession,
   operatorFetch,
   saveOperatorSession,
+  validateOperatorSession,
   type OperatorSession,
 } from "@/lib/mtaOperatorSession";
 import { EVENT_DATES, defaultEventDate, type EventDate } from "@/lib/mtaEventCalendar";
@@ -19,13 +20,13 @@ import { useQrScanner } from "@/hooks/useQrScanner";
  * Staging/preview only. Volunteers never issue a raw API call — every
  * button here performs one fixed, pre-built request against the
  * existing api/operator/* endpoints (checkin-search, checkin-confirm,
- * checkin-reverse). No production activation: this route exists but is
- * not linked from any navigation, and it requires the same
- * MTA_CHECKIN_OPERATOR_SECRET the backend already enforces — which is
- * not provisioned in production.
+ * checkin-reverse, validate-session). Gated behind
+ * VITE_ENABLE_OPERATOR_UI (see src/lib/mtaFeatureFlags.ts) and the
+ * same MTA_CHECKIN_OPERATOR_SECRET the backend already enforces —
+ * neither is set in production.
  */
 
-type SearchResult = { id: string; full_name: string; attendance_mode: string };
+type SearchResult = { id: string; full_name: string; attendance_mode: string; masked_contact: string | null };
 
 type AlreadyCheckedIn = {
   id: string;
@@ -39,7 +40,7 @@ type Screen =
   | { name: "confirm"; registrationId: string; fullName: string; attendanceMode: string; method: "qr_scan" | "manual_lookup" }
   | { name: "success"; fullName: string; eventDate: string }
   | { name: "already_checked_in"; registrationId: string; fullName: string; attendanceMode: string; method: "qr_scan" | "manual_lookup"; existing: AlreadyCheckedIn }
-  | { name: "reversed_success"; fullName: string; eventDate: string };
+  | { name: "reversal_success"; fullName: string };
 
 const REGISTRATION_ID_FROM_URL = /\/checkin\/([0-9a-f-]{36})/i;
 
@@ -55,9 +56,26 @@ const eventDateLabel = (date: string) => {
   return labels[date] ?? date;
 };
 
+const SYSTEM_UNAVAILABLE = "System temporarily unavailable. Please try again shortly.";
+
 function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession) => void }) {
   const [secret, setSecret] = useState("");
   const [operatorId, setOperatorId] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    const candidate = { secret: secret.trim(), operatorId: operatorId.trim() };
+    setChecking(true);
+    setError(null);
+    const result = await validateOperatorSession(candidate);
+    setChecking(false);
+    if (result.ok === false) {
+      setError(result.error);
+      return;
+    }
+    onSignedIn(candidate);
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#05060b] px-5 py-10 text-white">
@@ -69,6 +87,11 @@ function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession)
             One-time setup for this device. Ask the records officer for the operator secret and your operator ID.
           </p>
         </div>
+        {error && (
+          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
         <div className="space-y-3">
           <Input
             type="password"
@@ -86,10 +109,10 @@ function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession)
         </div>
         <Button
           className="h-16 w-full text-xl font-bold"
-          disabled={!secret.trim() || !operatorId.trim()}
-          onClick={() => onSignedIn({ secret: secret.trim(), operatorId: operatorId.trim() })}
+          disabled={!secret.trim() || !operatorId.trim() || checking}
+          onClick={() => void submit()}
         >
-          Continue
+          {checking ? "Checking…" : "Continue"}
         </Button>
       </div>
     </main>
@@ -98,6 +121,7 @@ function OperatorSignIn({ onSignedIn }: { onSignedIn: (session: OperatorSession)
 
 export default function OperatorCheckIn() {
   const [session, setSession] = useState<OperatorSession | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
   const [screen, setScreen] = useState<Screen>({ name: "home" });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
@@ -105,57 +129,112 @@ export default function OperatorCheckIn() {
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [eventDate, setEventDate] = useState<EventDate>(defaultEventDate());
+  const [dayOverrideOpen, setDayOverrideOpen] = useState(false);
+  const [pendingOverrideDate, setPendingOverrideDate] = useState<EventDate | null>(null);
+  const [showReversalForm, setShowReversalForm] = useState(false);
   const [reverseReason, setReverseReason] = useState("");
   const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     setSession(loadOperatorSession());
+    setSessionLoaded(true);
   }, []);
 
-  const handleDecoded = useCallback((text: string) => {
-    setShowScanner(false);
-    const match = text.match(REGISTRATION_ID_FROM_URL);
-    if (!match) {
-      setErrorMessage("That QR code isn't a recognized MTA check-in code.");
-      return;
-    }
-    void openConfirmForRegistrationId(match[1], "qr_scan");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const scanner = useQrScanner(handleDecoded);
-
-  const openConfirmForRegistrationId = async (
-    registrationId: string,
-    method: "qr_scan" | "manual_lookup",
-  ) => {
-    if (!session) return;
-    setBusy(true);
+  const goHome = useCallback(() => {
+    setScreen({ name: "home" });
+    setSearchQuery("");
+    setSearchResults(null);
     setErrorMessage(null);
-    try {
-      const resp = await operatorFetch(
-        session,
-        `/api/operator/checkin-search?registrationId=${encodeURIComponent(registrationId)}`,
-      );
-      const data = await resp.json();
-      if (!resp.ok || !data.success || !data.results?.[0]) {
-        setErrorMessage("That QR code doesn't match any registration.");
+    setShowReversalForm(false);
+    setReverseReason("");
+    setDayOverrideOpen(false);
+    setPendingOverrideDate(null);
+  }, []);
+
+  const resetToSignIn = useCallback(
+    (message: string) => {
+      clearOperatorSession();
+      setSession(null);
+      goHome();
+      setErrorMessage(message);
+    },
+    [goHome],
+  );
+
+  /**
+   * Central handler for the two response shapes every operator
+   * endpoint can return regardless of what it does: an expired/invalid
+   * session (401/403) or the backend being unconfigured (503). Returns
+   * true when it already fully handled the response (caller should
+   * stop), false when the caller should continue with its own
+   * endpoint-specific logic.
+   */
+  const handleSharedFailure = useCallback(
+    (status: number): boolean => {
+      if (status === 401) {
+        resetToSignIn("Your session is no longer valid. Please sign in again.");
+        return true;
+      }
+      if (status === 403) {
+        resetToSignIn("Your operator ID is no longer recognized. Please sign in again.");
+        return true;
+      }
+      if (status === 503) {
+        setErrorMessage(SYSTEM_UNAVAILABLE);
+        return true;
+      }
+      return false;
+    },
+    [resetToSignIn],
+  );
+
+  const openConfirmForRegistrationId = useCallback(
+    async (registrationId: string, method: "qr_scan" | "manual_lookup") => {
+      if (!session) return;
+      setBusy(true);
+      setErrorMessage(null);
+      try {
+        const resp = await operatorFetch(
+          session,
+          `/api/operator/checkin-search?registrationId=${encodeURIComponent(registrationId)}`,
+        );
+        const data = await resp.json();
+        if (handleSharedFailure(resp.status)) return;
+        if (!resp.ok || !data.success || !data.results?.[0]) {
+          setErrorMessage("That QR code doesn't match any registration.");
+          return;
+        }
+        const result = data.results[0] as SearchResult;
+        setScreen({
+          name: "confirm",
+          registrationId: result.id,
+          fullName: result.full_name,
+          attendanceMode: result.attendance_mode,
+          method,
+        });
+      } catch {
+        setErrorMessage("Lookup failed. Check your connection and try again.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [session, handleSharedFailure],
+  );
+
+  const handleDecoded = useCallback(
+    (text: string) => {
+      setShowScanner(false);
+      const match = text.match(REGISTRATION_ID_FROM_URL);
+      if (!match) {
+        setErrorMessage("That QR code isn't a recognized MTA check-in code.");
         return;
       }
-      const result = data.results[0] as SearchResult;
-      setScreen({
-        name: "confirm",
-        registrationId: result.id,
-        fullName: result.full_name,
-        attendanceMode: result.attendance_mode,
-        method,
-      });
-    } catch {
-      setErrorMessage("Lookup failed. Check your connection and try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
+      void openConfirmForRegistrationId(match[1], "qr_scan");
+    },
+    [openConfirmForRegistrationId],
+  );
+
+  const scanner = useQrScanner(showScanner, handleDecoded);
 
   const runSearch = async () => {
     if (!session || searchQuery.trim().length < 2) return;
@@ -164,6 +243,7 @@ export default function OperatorCheckIn() {
     try {
       const resp = await operatorFetch(session, `/api/operator/checkin-search?query=${encodeURIComponent(searchQuery.trim())}`);
       const data = await resp.json();
+      if (handleSharedFailure(resp.status)) return;
       if (!resp.ok || !data.success) {
         setErrorMessage(data.error ?? "Search failed.");
         setSearchResults(null);
@@ -202,6 +282,7 @@ export default function OperatorCheckIn() {
         }),
       });
       const data = await resp.json();
+      if (handleSharedFailure(resp.status)) return;
       if (resp.status === 201 && data.success) {
         setScreen({ name: "success", fullName: data.attendance.full_name, eventDate: data.attendance.event_date });
         return;
@@ -225,12 +306,20 @@ export default function OperatorCheckIn() {
     }
   };
 
-  const confirmReversalAndRecheck = async () => {
+  /**
+   * Reverses a mistaken check-in only — it never automatically
+   * re-checks the registrant in afterward. If a fresh check-in is
+   * genuinely needed, the operator scans or searches again as its own
+   * deliberate action, avoiding the earlier two-request
+   * reverse-then-confirm sequence a concurrent operator action could
+   * interleave with.
+   */
+  const confirmReversalOnly = async () => {
     if (screen.name !== "already_checked_in" || !session || !reverseReason.trim()) return;
     setBusy(true);
     setErrorMessage(null);
     try {
-      const reverseResp = await operatorFetch(session, "/api/operator/checkin-reverse", {
+      const resp = await operatorFetch(session, "/api/operator/checkin-reverse", {
         method: "POST",
         body: JSON.stringify({
           attendanceId: screen.existing.id,
@@ -238,28 +327,16 @@ export default function OperatorCheckIn() {
           note: reverseReason.trim(),
         }),
       });
-      const reverseData = await reverseResp.json();
-      if (!reverseResp.ok || !reverseData.success) {
-        setErrorMessage(reverseData.error ?? "Reversal failed.");
+      const data = await resp.json();
+      if (handleSharedFailure(resp.status)) return;
+      if (!resp.ok || !data.success) {
+        setErrorMessage(data.error ?? "Reversal failed.");
         return;
       }
-
-      const confirmResp = await operatorFetch(session, "/api/operator/checkin-confirm", {
-        method: "POST",
-        body: JSON.stringify({
-          registrationId: screen.registrationId,
-          method: screen.method,
-          operator: session.operatorId,
-          eventDate,
-        }),
-      });
-      const confirmData = await confirmResp.json();
-      if (confirmResp.status === 201 && confirmData.success) {
-        setReverseReason("");
-        setScreen({ name: "reversed_success", fullName: confirmData.attendance.full_name, eventDate: confirmData.attendance.event_date });
-        return;
-      }
-      setErrorMessage(confirmData.error ?? "Re-check-in after reversal failed.");
+      const fullName = screen.fullName;
+      setReverseReason("");
+      setShowReversalForm(false);
+      setScreen({ name: "reversal_success", fullName });
     } catch {
       setErrorMessage("Reversal failed. Check your connection and try again.");
     } finally {
@@ -267,13 +344,18 @@ export default function OperatorCheckIn() {
     }
   };
 
-  const goHome = () => {
-    setScreen({ name: "home" });
-    setSearchQuery("");
-    setSearchResults(null);
-    setErrorMessage(null);
-    setReverseReason("");
+  const requestDayOverride = (date: EventDate) => setPendingOverrideDate(date);
+  const confirmDayOverride = () => {
+    if (pendingOverrideDate) setEventDate(pendingOverrideDate);
+    setPendingOverrideDate(null);
+    setDayOverrideOpen(false);
   };
+  const cancelDayOverride = () => {
+    setPendingOverrideDate(null);
+    setDayOverrideOpen(false);
+  };
+
+  if (!sessionLoaded) return null;
 
   if (!session) {
     return <OperatorSignIn onSignedIn={(s) => { saveOperatorSession(s); setSession(s); }} />;
@@ -291,7 +373,7 @@ export default function OperatorCheckIn() {
             variant="ghost"
             size="sm"
             className="text-white/50"
-            onClick={() => { clearOperatorSession(); setSession(null); goHome(); }}
+            onClick={() => resetToSignIn("")}
           >
             Sign out
           </Button>
@@ -315,7 +397,7 @@ export default function OperatorCheckIn() {
                 <Button
                   variant="secondary"
                   className="h-14 w-full text-lg"
-                  onClick={() => { scanner.stop(); setShowScanner(false); }}
+                  onClick={() => setShowScanner(false)}
                 >
                   <X className="mr-2 h-5 w-5" /> Cancel scan
                 </Button>
@@ -323,7 +405,7 @@ export default function OperatorCheckIn() {
             ) : (
               <Button
                 className="h-24 w-full flex-col gap-1 rounded-2xl bg-[#C9972A] text-xl font-bold text-black hover:bg-[#C9972A]/90"
-                onClick={() => { setShowScanner(true); void scanner.start(); }}
+                onClick={() => setShowScanner(true)}
               >
                 <Camera className="h-8 w-8" />
                 Scan QR
@@ -356,7 +438,10 @@ export default function OperatorCheckIn() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-left text-lg hover:bg-white/10"
                   >
                     <div className="font-semibold">{result.full_name}</div>
-                    <div className="text-sm text-white/50">{attendanceLabel(result.attendance_mode)}</div>
+                    <div className="text-sm text-white/50">
+                      {attendanceLabel(result.attendance_mode)}
+                      {result.masked_contact && <> · {result.masked_contact}</>}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -374,22 +459,48 @@ export default function OperatorCheckIn() {
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-semibold text-white/70">Event day</p>
-              <div className="grid grid-cols-1 gap-2">
-                {EVENT_DATES.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => setEventDate(date)}
-                    className={`rounded-xl border px-4 py-4 text-left text-lg font-medium transition-colors ${
-                      eventDate === date
-                        ? "border-[#C9972A] bg-[#C9972A]/15 text-[#C9972A]"
-                        : "border-white/10 bg-white/5 text-white/70"
-                    }`}
-                  >
-                    {eventDateLabel(date)}
-                  </button>
-                ))}
+              <div className="rounded-xl border border-[#C9972A]/50 bg-[#C9972A]/10 px-4 py-4 text-center">
+                <p className="text-xs uppercase tracking-wide text-[#C9972A]">Checking in for</p>
+                <p className="text-lg font-bold text-[#C9972A]">{eventDateLabel(eventDate)}</p>
               </div>
+
+              {!dayOverrideOpen ? (
+                <button
+                  onClick={() => setDayOverrideOpen(true)}
+                  className="mt-2 w-full text-center text-sm text-white/40 underline underline-offset-2"
+                >
+                  Wrong day? Supervisor override
+                </button>
+              ) : pendingOverrideDate ? (
+                <div className="mt-3 space-y-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-center">
+                  <p className="text-sm text-yellow-200">
+                    Confirm marking attendance for {eventDateLabel(pendingOverrideDate)} instead?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="destructive" className="h-12 flex-1" onClick={confirmDayOverride}>
+                      Yes, override
+                    </Button>
+                    <Button variant="ghost" className="h-12 flex-1 text-white/60" onClick={cancelDayOverride}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {EVENT_DATES.filter((date) => date !== eventDate).map((date) => (
+                    <button
+                      key={date}
+                      onClick={() => requestDayOverride(date)}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-white/70"
+                    >
+                      {eventDateLabel(date)}
+                    </button>
+                  ))}
+                  <button onClick={cancelDayOverride} className="w-full text-center text-sm text-white/40 underline">
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="mt-auto space-y-3">
@@ -420,20 +531,22 @@ export default function OperatorCheckIn() {
           </div>
         )}
 
-        {screen.name === "reversed_success" && (
+        {screen.name === "reversal_success" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-            <CheckCircle2 className="h-20 w-20 text-green-500" />
+            <ShieldCheck className="h-20 w-20 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{screen.fullName}</p>
-              <p className="mt-1 text-white/60">Previous entry reversed and re-checked in — {eventDateLabel(screen.eventDate)}</p>
+              <p className="mt-1 text-white/60">
+                Check-in reversed. This person is not currently marked as checked in.
+              </p>
             </div>
             <Button className="h-16 w-full max-w-xs text-xl font-bold" onClick={goHome}>
-              Scan Next
+              Done
             </Button>
           </div>
         )}
 
-        {screen.name === "already_checked_in" && (
+        {screen.name === "already_checked_in" && !showReversalForm && (
           <div className="flex flex-1 flex-col gap-6">
             <div className="rounded-2xl border border-yellow-500/40 bg-yellow-500/10 p-6 text-center">
               <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-yellow-400" />
@@ -445,10 +558,35 @@ export default function OperatorCheckIn() {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-white/70">
-                Only reverse this if it was a mistake (state the reason):
+            <div className="mt-auto space-y-3">
+              <Button
+                className="h-20 w-full rounded-2xl bg-green-600 text-xl font-bold hover:bg-green-700"
+                onClick={goHome}
+              >
+                <CheckCircle2 className="mr-2 h-6 w-6" /> Done / Keep Existing Check-In
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-12 w-full text-sm text-white/50 underline underline-offset-2"
+                onClick={() => setShowReversalForm(true)}
+              >
+                This was a mistake — reverse it
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {screen.name === "already_checked_in" && showReversalForm && (
+          <div className="flex flex-1 flex-col gap-6">
+            <div className="rounded-2xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-center">
+              <p className="font-semibold">{screen.fullName}</p>
+              <p className="text-sm text-yellow-200">
+                Reversing the check-in from {eventDateLabel(screen.existing.event_date)} by {screen.existing.checked_in_by}
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-white/70">Reason for reversing (required):</p>
               <Textarea
                 value={reverseReason}
                 onChange={(e) => setReverseReason(e.target.value)}
@@ -461,13 +599,18 @@ export default function OperatorCheckIn() {
               <Button
                 variant="destructive"
                 className="h-16 w-full text-lg font-bold"
-                onClick={() => void confirmReversalAndRecheck()}
+                onClick={() => void confirmReversalOnly()}
                 disabled={busy || !reverseReason.trim()}
               >
-                <RotateCcw className="mr-2 h-5 w-5" /> Reverse & Check In Again
+                <RotateCcw className="mr-2 h-5 w-5" /> Confirm Reversal
               </Button>
-              <Button variant="ghost" className="h-14 w-full text-lg text-white/60" onClick={goHome} disabled={busy}>
-                Cancel
+              <Button
+                variant="ghost"
+                className="h-14 w-full text-lg text-white/60"
+                onClick={() => { setShowReversalForm(false); setReverseReason(""); }}
+                disabled={busy}
+              >
+                Back
               </Button>
             </div>
           </div>

@@ -68,3 +68,39 @@ export async function operatorFetch(
     cache: "no-store",
   });
 }
+
+export type OperatorSessionValidation =
+  | { ok: true }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Validates a candidate secret + operator ID against the backend
+ * before ever storing them. Sign-in must never save an unverified
+ * secret — a wrong secret or an operator ID that isn't on the
+ * configured allow-list must be rejected here, not discovered later on
+ * the first real check-in attempt.
+ */
+export async function validateOperatorSession(
+  candidate: OperatorSession,
+): Promise<OperatorSessionValidation> {
+  try {
+    const resp = await operatorFetch(candidate, "/api/operator/validate-session", {
+      method: "POST",
+      body: JSON.stringify({ operator: candidate.operatorId }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.status === 200 && data.success) return { ok: true };
+    if (resp.status === 503) {
+      return { ok: false, status: 503, error: "System temporarily unavailable. Please try again shortly." };
+    }
+    if (resp.status === 401) {
+      return { ok: false, status: 401, error: "Operator secret is incorrect." };
+    }
+    if (resp.status === 403) {
+      return { ok: false, status: 403, error: "Operator ID is not recognized." };
+    }
+    return { ok: false, status: resp.status, error: data.error ?? "Sign-in failed." };
+  } catch {
+    return { ok: false, status: 0, error: "Sign-in failed. Check your connection and try again." };
+  }
+}
