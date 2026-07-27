@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CheckIn from "./pages/CheckIn";
+import OperatorCheckIn from "./pages/OperatorCheckIn";
 import FloatingPlayer from "./components/FloatingPlayer";
+import { isOperatorUiEnabled } from "./lib/mtaFeatureFlags";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +22,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/checkin/:id" element={<CheckIn />} />
+          {/* Staging/preview operator tool — not linked from any navigation,
+              and gated behind VITE_ENABLE_OPERATOR_UI (default disabled).
+              Merging this route must not silently expose it in production. */}
+          <Route path="/operator/checkin" element={isOperatorUiEnabled() ? <OperatorCheckIn /> : <NotFound />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
