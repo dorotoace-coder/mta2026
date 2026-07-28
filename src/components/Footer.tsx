@@ -1,7 +1,14 @@
 import { Heart, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 const Footer = () => (
   <footer className="relative py-14" style={{ background: "linear-gradient(180deg, #100c30 0%, #050816 100%)" }}>
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <motion.div
+      className="max-w-6xl mx-auto px-4 sm:px-6"
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <div className="flex flex-col items-center text-center">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-[#d7b767]" />
@@ -20,7 +27,7 @@ const Footer = () => (
           Made with <Heart className="w-3 h-3" style={{ color: "rgba(200,183,255,0.55)" }} /> for the Kingdom
         </p>
       </div>
-    </div>
+    </motion.div>
   </footer>
 );
 export default Footer;

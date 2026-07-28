@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const links = [
   { label: "Home", href: "#" },
@@ -34,17 +35,25 @@ const Navbar = () => {
         {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </button>
       </div>
-      {open && (
-        <div className="mx-4 mb-4 rounded-2xl border border-white/10 bg-[#07142b]/95 p-4 md:hidden">
-          <div className="grid gap-2">
-            {links.map((l) => (
-              <a key={l.label} href={l.href} onClick={() => setOpen(false)} className="rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white">
-                {l.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="mx-4 mb-4 overflow-hidden rounded-2xl border border-white/10 bg-[#07142b]/95 md:hidden"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="grid gap-2 p-4">
+              {links.map((l) => (
+                <a key={l.label} href={l.href} onClick={() => setOpen(false)} className="rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white">
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
