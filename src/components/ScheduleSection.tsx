@@ -19,7 +19,7 @@ const schedule = [
   {
     day: "Day 3", date: "Sunday, September 6", title: "Celebration & Graduation",
     events: [
-      { time: "9:00 AM", session: "Celebration Service & Ordination/Graduation" },
+      { time: "12:00 PM", session: "Celebration Service & Ordination/Graduation" },
     ],
   },
 ];
