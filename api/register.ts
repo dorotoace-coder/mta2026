@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { Resend } from "resend";
 import QRCode from "qrcode";
 import { normalizeEmail, normalizeFullName } from "./_lib/mtaRegistrationIdentity.js";
+import { registerZoomAttendee } from "./_lib/zoomClient.js";
 
 // ── MTA 2026 — EXPLOITS ────────────────────────────────────────
 const ADMIN_EMAIL = "heartbeatofgodf@gmail.com";
@@ -13,6 +14,10 @@ const EVENT_DATES = "September 4–6, 2026";
 const EVENT_LOCATION = "HBG Ministry, Akute, Nigeria & Online";
 const REG_TABLE = "mta_registrations";
 const CHECKIN_QR_CONTENT_ID = "mta-checkin-qr@hbg";
+// Public Zoom registration page — used only as a fallback in the confirmation
+// email if programmatic registration via the Zoom API fails or isn't
+// configured yet (see api/_lib/zoomClient.ts).
+const ZOOM_FALLBACK_REGISTRATION_URL = "https://us06web.zoom.us/meeting/register/SzXsC7bQT5uF_VZ-jp0dDg";
 
 const safeSupabaseHost = (value: string | undefined): string | null => {
   if (!value) return null;
@@ -261,6 +266,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error(`[register] DB write FAILED for ${email}: ${dbError}`);
   }
 
+  // ── 1.5. Zoom registration (online attendees only, best-effort). Falls
+  //         back to the public registration link in the email on failure —
+  //         never blocks the primary registration flow. ──
+  let zoomJoinUrl: string | null = null;
+  if (attendanceMode === "online") {
+    try {
+      const zoomResult = await registerZoomAttendee(fullName, email);
+      zoomJoinUrl = zoomResult.joinUrl;
+    } catch (err) {
+      console.error(`[register] Zoom registration failed for ${email} (falling back to manual link):`, err);
+    }
+  }
+
   // ── 2. Emails (admin notify + registrant auto-reply). Admin email is the
   //       safety net if the DB write failed, so nothing is lost silently. ──
   let emailSent = false;
@@ -326,6 +344,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">${EVENT_LOCATION}</p>
             <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(attendanceMode)}</strong></p>
           </div>
+          ${attendanceMode === "online" ? `
+          <div style="background:rgba(45,140,255,0.1);border:1px solid rgba(45,140,255,0.3);border-radius:10px;padding:20px;margin:0 0 24px;text-align:center;">
+            <p style="margin:0 0 12px;color:#7ec4ff;font-size:13px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Joining Online</p>
+            <a href="${zoomJoinUrl || ZOOM_FALLBACK_REGISTRATION_URL}" style="display:inline-block;padding:12px 28px;background:#2d8cff;color:#fff;border-radius:8px;font-weight:bold;text-decoration:none;font-size:14px;">
+              ${zoomJoinUrl ? "Join on Zoom" : "Register on Zoom"}
+            </a>
+            <p style="margin:12px 0 0;color:#B88FC7;font-size:12px;">${zoomJoinUrl ? "This is your personal join link — keep this email safe." : "Click to complete your Zoom registration."}</p>
+          </div>
+          ` : ""}
           <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(201,151,42,0.35);border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
             <p style="margin:0 0 10px;color:#C9972A;font-size:15px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Before the Assembly — WE WAIT</p>
             <p style="margin:0;color:#fff;font-size:16px;font-weight:bold;line-height:1.6;">Join 21 Days of Fasting & Prayer: August 13 – September 2, 2026</p>
