@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { runMtaDevotionalEmailSend } from "../_lib/mtaDevotionalEmailSender.js";
+import {
+  assertMtaDevotionalLiveSendAuthorized,
+  runMtaDevotionalEmailSend,
+} from "../_lib/mtaDevotionalEmailSender.js";
 
 type Body = {
   date?: string;
@@ -74,8 +77,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // DOR-156B-P4A: single-recipient-only Preview live-test gate.
   // live=true is permitted ONLY when the Preview gate is enabled, a single
   // recipient email is provided, and all-recipient sending is NOT requested.
-  // All-recipient live stays blocked. The sender still enforces
-  // MTA_DEVOTIONAL_SENDS_DISABLED, so this branch cannot send while disabled.
+  // All-recipient live stays blocked. The shared sender authorization requires
+  // an explicit MTA_DEVOTIONAL_LIVE_SEND_ENABLED=true and still honors the
+  // MTA_DEVOTIONAL_SENDS_DISABLED emergency override.
   if (liveRequested) {
     const singleLiveTestEnabled =
       process.env.MTA_DEVOTIONAL_SINGLE_LIVE_TEST_ENABLED === "true";
@@ -94,6 +98,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+      assertMtaDevotionalLiveSendAuthorized();
+    } catch (error) {
+      return res.status(403).json({
+        view_type: "mta_devotional_cron",
+        status: "live_send_blocked",
+        reason: error instanceof Error ? error.message : "Live devotional sending is blocked.",
+        dry_run: true,
+        email_sent: false,
+        provider_call_made: false,
+        provider_calls_used: 0,
+      });
+    }
+
+    try {
       const summary = await runMtaDevotionalEmailSend({
         date,
         email,
@@ -104,6 +122,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source: "cron",
         allowAllLive: false,
       });
+
+      if (summary.result?.reconciliation_required) {
+        return res.status(502).json({
+          view_type: "mta_devotional_cron",
+          status: "single_live_test_reconciliation_required",
+          ...summary,
+        });
+      }
+
+      if (summary.result?.sent !== 1) {
+        return res.status(502).json({
+          view_type: "mta_devotional_cron",
+          status: "single_live_test_failed",
+          ...summary,
+        });
+      }
 
       return res.status(200).json({
         view_type: "mta_devotional_cron",

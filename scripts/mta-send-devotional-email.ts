@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-import { runMtaDevotionalEmailSend } from "../api/_lib/mtaDevotionalEmailSender.js";
+import {
+  assertMtaDevotionalLiveSendAuthorized,
+  runMtaDevotionalEmailSend,
+} from "../api/_lib/mtaDevotionalEmailSender.js";
 
 type Args = {
   date: string;
@@ -33,6 +36,7 @@ const parseArgs = (): Args => {
 
 const run = async () => {
   const args = parseArgs();
+  if (args.live) assertMtaDevotionalLiveSendAuthorized();
   const summary = await runMtaDevotionalEmailSend({
     ...args,
     source: "manual",
@@ -43,6 +47,14 @@ const run = async () => {
 
   if (summary.mode === "dry_run") {
     console.log("\nDry-run complete. No Resend provider call was made and no live email was sent.");
+  }
+
+  if (summary.mode === "live" && summary.result?.reconciliation_required) {
+    throw new Error("Live send requires manual provider/audit reconciliation; no automatic retry was attempted.");
+  }
+
+  if (summary.mode === "live" && summary.result?.sent !== 1) {
+    throw new Error("Live single-recipient send did not complete successfully.");
   }
 };
 

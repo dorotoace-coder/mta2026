@@ -177,6 +177,19 @@ var requiredEnv = (name) => {
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 };
+var getMtaDevotionalLiveSendBlockReason = () => {
+  if (process.env.MTA_DEVOTIONAL_LIVE_SEND_ENABLED !== "true") {
+    return "MTA_DEVOTIONAL_LIVE_SEND_ENABLED must be exactly true for live sends.";
+  }
+  if (process.env.MTA_DEVOTIONAL_SENDS_DISABLED === "true") {
+    return "MTA_DEVOTIONAL_SENDS_DISABLED=true is active.";
+  }
+  return null;
+};
+var assertMtaDevotionalLiveSendAuthorized = () => {
+  const reason = getMtaDevotionalLiveSendBlockReason();
+  if (reason) throw new Error(`Live devotional sending is blocked: ${reason}`);
+};
 var maskEmail = (email) => {
   if (!email) return null;
   const [local, domain] = email.split("@");
@@ -371,6 +384,19 @@ var updateAudit = async (id, patch) => {
     throw new Error(`Audit update failed (${response.status}): ${await response.text()}`);
   }
 };
+var providerErrorStatus = (error) => {
+  if (!error || typeof error !== "object") return null;
+  const statusCode = error.statusCode;
+  return typeof statusCode === "number" && Number.isFinite(statusCode) ? statusCode : null;
+};
+var safelyUpdateAudit = async (id, patch) => {
+  try {
+    await updateAudit(id, patch);
+    return true;
+  } catch {
+    return false;
+  }
+};
 var runMtaDevotionalEmailSend = async (options) => {
   const live = options.live === true;
   const runId = crypto.randomUUID();
@@ -380,10 +406,9 @@ var runMtaDevotionalEmailSend = async (options) => {
   const prayerSection = prayerSectionsByDay[day];
   const contentKey = `mta-fast-day-${String(day).padStart(2, "0")}`;
   const baseUrl = (process.env.MTA_PUBLIC_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "");
-  if (live && process.env.MTA_DEVOTIONAL_SENDS_DISABLED === "true") {
-    throw new Error("Live sends are blocked because MTA_DEVOTIONAL_SENDS_DISABLED=true.");
-  }
-  if (live && !options.email && !options.all) {
+  const singleRecipientEmail = typeof options.email === "string" ? options.email.trim() : "";
+  if (live) assertMtaDevotionalLiveSendAuthorized();
+  if (live && !singleRecipientEmail && !options.all) {
     throw new Error("Live mode requires --email=<address> for one recipient or --all for eligible recipients.");
   }
   if (live && options.all && !options.confirmSend) {
@@ -392,7 +417,13 @@ var runMtaDevotionalEmailSend = async (options) => {
   if (live && options.all && options.allowAllLive !== true) {
     throw new Error("All-recipient live devotional sending is blocked in DOR-156B-P1.");
   }
-  const { recipients, counts } = await fetchRecipients(options);
+  const recipientQueryOptions = live && singleRecipientEmail && !options.all ? {
+    ...options,
+    email: singleRecipientEmail,
+    limit: 1
+  } : options;
+  const { recipients, counts } = await fetchRecipients(recipientQueryOptions);
+  const recipientsToProcess = live && singleRecipientEmail && !options.all ? recipients.slice(0, 1) : recipients;
   const summary = {
     run_id: runId,
     mode: live ? "live" : "dry_run",
@@ -413,12 +444,13 @@ var runMtaDevotionalEmailSend = async (options) => {
       dry_run_default: true,
       provider_call_made: false,
       provider_calls_used: 0,
+      live_send_enabled_guard: "MTA_DEVOTIONAL_LIVE_SEND_ENABLED=true is required for live sends",
       stop_send_guard: "MTA_DEVOTIONAL_SENDS_DISABLED=true blocks live sends",
       cron_enabled_guard: "MTA_DEVOTIONAL_CRON_ENABLED=true required before cron execution",
       live_all_requires: "--live --all --confirm-send",
       scheduled_live_all_status: "blocked in DOR-156B-P1"
     },
-    candidate_sample: recipients.slice(0, 5).map((recipient) => ({
+    candidate_sample: recipientsToProcess.slice(0, 5).map((recipient) => ({
       id: recipient.id,
       full_name: recipient.full_name,
       email: maskEmail(recipient.email),
@@ -431,8 +463,13 @@ var runMtaDevotionalEmailSend = async (options) => {
   let sent = 0;
   let failed = 0;
   let skipped = 0;
+  let indeterminate = 0;
+  let providerAccepted = 0;
+  let providerCallsUsed = 0;
   let providerMessageIdPresent = false;
-  for (const recipient of recipients) {
+  let reconciliationRequired = false;
+  let reconciliationReason = null;
+  for (const recipient of recipientsToProcess) {
     if (!recipient.email) continue;
     const reservation = await reserveAudit({
       run_id: runId,
@@ -459,45 +496,101 @@ var runMtaDevotionalEmailSend = async (options) => {
       prayerSection,
       journeyUrl
     });
+    let result;
     try {
-      const result = await resend.emails.send({
+      providerCallsUsed += 1;
+      result = await resend.emails.send({
         from: process.env.MTA_DEVOTIONAL_FROM || "MTA 2026 <noreply@heartbeatofgod.ca>",
         to: recipient.email,
         subject: `MTA 2026 Fast \u2014 Day ${day}: ${entry.title}`,
         html
       });
-      providerMessageIdPresent = providerMessageIdPresent || Boolean(result.data?.id);
-      await updateAudit(reservation.id, {
-        status: "sent",
-        provider_message_id: result.data?.id ?? null,
-        sent_at: (/* @__PURE__ */ new Date()).toISOString()
+    } catch {
+      indeterminate += 1;
+      reconciliationRequired = true;
+      reconciliationReason = "provider_outcome_indeterminate";
+      const auditRecorded = await safelyUpdateAudit(reservation.id, {
+        status: "pending",
+        error_message: "Provider outcome indeterminate after a network exception; manual reconciliation is required."
       });
-      sent += 1;
-    } catch (error) {
-      failed += 1;
-      await updateAudit(reservation.id, {
-        status: "failed",
-        error_message: error instanceof Error ? error.message : String(error)
-      });
+      if (!auditRecorded) reconciliationReason = "provider_outcome_indeterminate_audit_update_failed";
+      break;
     }
+    if (result?.error) {
+      const statusCode = providerErrorStatus(result.error);
+      if (statusCode === null) {
+        indeterminate += 1;
+        reconciliationRequired = true;
+        reconciliationReason = "provider_outcome_indeterminate";
+        const auditRecorded = await safelyUpdateAudit(reservation.id, {
+          status: "pending",
+          error_message: "Provider outcome indeterminate; manual reconciliation is required."
+        });
+        if (!auditRecorded) reconciliationReason = "provider_outcome_indeterminate_audit_update_failed";
+        break;
+      }
+      failed += 1;
+      const auditRecorded = await safelyUpdateAudit(reservation.id, {
+        status: "failed",
+        error_message: `Provider rejected the send (HTTP ${statusCode}).`
+      });
+      if (!auditRecorded) {
+        reconciliationRequired = true;
+        reconciliationReason = "provider_failure_audit_finalization_failed";
+        break;
+      }
+      continue;
+    }
+    const providerMessageId = typeof result?.data?.id === "string" ? result.data.id.trim() : "";
+    if (!providerMessageId) {
+      indeterminate += 1;
+      reconciliationRequired = true;
+      reconciliationReason = "provider_response_missing_message_id";
+      const auditRecorded = await safelyUpdateAudit(reservation.id, {
+        status: "pending",
+        error_message: "Provider response did not include a message ID; manual reconciliation is required."
+      });
+      if (!auditRecorded) reconciliationReason = "provider_response_missing_message_id_audit_update_failed";
+      break;
+    }
+    providerAccepted += 1;
+    providerMessageIdPresent = true;
+    const auditFinalized = await safelyUpdateAudit(reservation.id, {
+      status: "sent",
+      provider_message_id: providerMessageId,
+      sent_at: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    if (!auditFinalized) {
+      reconciliationRequired = true;
+      reconciliationReason = "provider_succeeded_audit_finalization_failed";
+      break;
+    }
+    sent += 1;
   }
   return {
     ...summary,
     safety: {
       ...summary.safety,
-      live_email_sent: sent > 0,
-      provider_call_made: sent + failed > 0,
-      provider_calls_used: sent + failed
+      live_email_sent: providerAccepted > 0,
+      provider_call_made: providerCallsUsed > 0,
+      provider_calls_used: providerCallsUsed
     },
     result: {
       sent,
       failed,
       skipped,
-      provider_message_id_present: providerMessageIdPresent
+      indeterminate,
+      provider_accepted: providerAccepted,
+      provider_message_id_present: providerMessageIdPresent,
+      reconciliation_required: reconciliationRequired,
+      reconciliation_reason: reconciliationReason,
+      automatic_retry_attempted: false
     }
   };
 };
 export {
+  assertMtaDevotionalLiveSendAuthorized,
+  getMtaDevotionalLiveSendBlockReason,
   isoDateToFastDay,
   runMtaDevotionalEmailSend
 };
