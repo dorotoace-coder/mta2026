@@ -187,7 +187,7 @@ const CheckIn = () => {
           <div className="mt-20 rounded-lg border border-[#C9972A]/30 bg-white/[0.04] p-8 text-center">
             <h1 className="text-2xl font-semibold text-[#C9972A]">Registration not found</h1>
             <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-white/75">
-              Registration not found — please check your link or register at mta.heartbeatofgod.ca
+              Registration not found — please check your link or register at tribex.heartbeatofgod.ca
             </p>
           </div>
         )}
