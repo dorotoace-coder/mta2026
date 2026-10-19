@@ -8,7 +8,7 @@ const getAppOrigin = () => {
   const deploymentHost = process.env.VERCEL_URL || process.env.VERCEL_BRANCH_URL;
   if (deploymentHost) return `https://${deploymentHost}`;
 
-  return "https://tribex.heartbeatofgod.ca";
+  return "https://events.heartbeatofgod.ca";
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
