@@ -76,7 +76,7 @@ describe("useQrScanner", () => {
     const track = makeTrack();
     const stream = makeStream([track]);
     getUserMediaMock.mockResolvedValue(stream);
-    mockJsQR.mockReturnValue({ data: "https://mta.heartbeatofgod.ca/checkin/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" });
+    mockJsQR.mockReturnValue({ data: "https://tribex.heartbeatofgod.ca/checkin/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" });
 
     const onDecoded = vi.fn();
     const { result } = renderHook(() => useQrScanner(true, onDecoded));
@@ -88,7 +88,7 @@ describe("useQrScanner", () => {
 
     await vi.advanceTimersByTimeAsync(300);
 
-    expect(onDecoded).toHaveBeenCalledWith("https://mta.heartbeatofgod.ca/checkin/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(onDecoded).toHaveBeenCalledWith("https://tribex.heartbeatofgod.ca/checkin/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
     expect(track.stop).toHaveBeenCalled();
   });
 
