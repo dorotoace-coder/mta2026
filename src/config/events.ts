@@ -133,6 +133,10 @@ export type HbgEvent = {
    *  which is correct for an event with nothing recorded yet. */
   audioTracks: { id: string; label: string; src: string }[];
 
+  /** Event flyer. Shown on the page and used as the social share image.
+   *  Omit and the flyer block is skipped. */
+  flyer?: { src: string; alt: string };
+
   /** Browser tab + share preview. */
   meta: { title: string; description: string };
 };
@@ -220,6 +224,10 @@ export const EVENTS: Record<string, HbgEvent> = {
     // No promo audio recorded yet — the player stays hidden rather than
     // playing MTA's announcement under a TRIBE X banner.
     audioTracks: [],
+    flyer: {
+      src: "/tribe-x-throne-room.jpg",
+      alt: "TRIBE X — Throne Room. A night of worship and prophecy. November 27, 2026. Host: Pastor Amos Unogwu.",
+    },
     meta: {
       title: "TRIBE X — Throne Room | HBG Ministry",
       description:

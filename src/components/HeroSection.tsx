@@ -67,13 +67,27 @@ const HeroSection = () => {
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <button onClick={scrollToRegister}
             className="mta-primary-button rounded-full px-10 py-4 text-sm font-black uppercase tracking-widest transition-all hover:scale-105">
-            Register Free
+            {currentEvent.registrationOpen ? "Register Free" : "Reserve Your Place"}
           </button>
           <button onClick={scrollToSchedule}
             className="mta-secondary-button rounded-full px-10 py-4 text-sm font-bold uppercase tracking-widest transition-all hover:border-white/40">
             View Programme
           </button>
         </div>
+
+        {/* Event flyer. Skipped entirely for events without one. */}
+        {currentEvent.flyer && (
+          <div className="mt-14 flex justify-center">
+            <img
+              src={currentEvent.flyer.src}
+              alt={currentEvent.flyer.alt}
+              width={987}
+              height={1093}
+              loading="lazy"
+              className="w-full max-w-sm rounded-[1.75rem] border border-[#ffd96b]/25 shadow-[0_24px_80px_rgba(186,128,255,0.35)]"
+            />
+          </div>
+        )}
       </div>
     </section>
   );
