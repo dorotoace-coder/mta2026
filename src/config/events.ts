@@ -87,8 +87,29 @@ export type HbgEvent = {
   /** Open the form only when registration actually works end to end.
    *  False renders an honest notice instead of a form that would fail. */
   registrationOpen: boolean;
-  /** Shown when registrationOpen is false. */
+  /** Shown when registrationOpen is false and there is no external path. */
   registrationClosedNote?: string;
+
+  /**
+   * Register through channels the ministry already runs, instead of the
+   * built-in form. Chosen for TRIBE X because the in-app form writes to a
+   * paused Supabase project, and because the Akute congregation registers
+   * over WhatsApp anyway. Costs nothing and needs no database.
+   *
+   * Set `registrationOpen: false` alongside this — the built-in form stays
+   * off and these channels render in its place.
+   */
+  externalRegistration?: {
+    note: string;
+    channels: {
+      type: "whatsapp" | "telegram" | "form" | "email";
+      label: string;
+      /** wa.me/<intl number, digits only>, t.me/<handle>, mailto:, or a form URL */
+      url: string;
+      /** Small line under the button */
+      hint?: string;
+    }[];
+  };
   /** Which fields to show. A one-night concert should not ask a visitor for
    *  their ministry designation or fasting commitment. */
   fields: RegistrationField[];
@@ -139,6 +160,32 @@ export const EVENTS: Record<string, HbgEvent> = {
     registrationOpen: false,
     registrationClosedNote:
       "Registration opens soon. Follow HBG Ministry on Telegram or Instagram and we will announce the moment it is live.",
+    externalRegistration: {
+      note: "Free entry. Send us a message and the team will confirm your place.",
+      channels: [
+        {
+          type: "whatsapp",
+          label: "Register on WhatsApp",
+          // Ministry line from heartbeatofgod.ca/connect — +234 813 093 8682
+          url: "https://wa.me/2348130938682?text=" +
+            encodeURIComponent(
+              "Hello HBG Ministry — I would like to register for TRIBE X: Throne Room on November 27. My name is:",
+            ),
+          hint: "Fastest — most of the Akute congregation registers this way",
+        },
+        {
+          type: "email",
+          label: "Register by Email",
+          url: "mailto:heartbeatofgodf@gmail.com?subject=" +
+            encodeURIComponent("TRIBE X Registration — Throne Room, Nov 27") +
+            "&body=" +
+            encodeURIComponent(
+              "Full name:\nPhone:\nLocation (city/country):\nAttending: in person / online\nWhat I am believing God for:",
+            ),
+          hint: "heartbeatofgodf@gmail.com",
+        },
+      ],
+    },
     fields: ["fullName", "email", "phone", "location", "desire"],
     programme: [
       { time: "7:00 PM", title: "Welcome & Opening Prayer", lead: "Pastor Amos Unogwu" },

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, ChevronDown, CheckCircle, Loader2 } from "lucide-react";
+import { UserPlus, ChevronDown, CheckCircle, Loader2, MessageCircle, Mail } from "lucide-react";
 import { currentEvent } from "@/config/events";
 
 const designations = [
@@ -103,6 +103,8 @@ const RegistrationForm = () => {
   // Registration is gated on the event config rather than always-on. A form
   // that collects details and cannot store them is worse than no form.
   if (!currentEvent.registrationOpen) {
+    const external = currentEvent.externalRegistration;
+
     return (
       <div className="w-full max-w-md mx-auto mb-10">
         <div
@@ -114,13 +116,57 @@ const RegistrationForm = () => {
         >
           <p className="mta-kicker mb-4">Registration</p>
           <h3 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-            Opening Soon
+            {external ? "Reserve Your Place" : "Opening Soon"}
           </h3>
           <p className="text-sm leading-relaxed text-white/75">
-            {currentEvent.registrationClosedNote ??
+            {external?.note ??
+              currentEvent.registrationClosedNote ??
               "Registration for this programme is not open yet."}
           </p>
-          <div className="mx-auto mt-6 h-px w-20 bg-[#ffd96b]/40" />
+
+          {external && (
+            <div className="mt-7 space-y-3">
+              {external.channels.map((ch) => (
+                <a
+                  key={ch.type + ch.url}
+                  href={ch.url}
+                  target={ch.type === "email" ? undefined : "_blank"}
+                  rel="noopener noreferrer"
+                  className="block rounded-2xl px-5 py-4 text-left transition hover:brightness-110"
+                  style={{
+                    background:
+                      ch.type === "whatsapp"
+                        ? "linear-gradient(135deg, #25D366, #128C7E)"
+                        : "rgba(255,255,255,0.09)",
+                    border:
+                      ch.type === "whatsapp"
+                        ? "none"
+                        : "1px solid rgba(255,255,255,0.18)",
+                  }}
+                >
+                  <span className="flex items-center gap-3">
+                    {ch.type === "whatsapp" ? (
+                      <MessageCircle className="h-5 w-5 shrink-0 text-white" />
+                    ) : (
+                      <Mail className="h-5 w-5 shrink-0 text-[#ffd96b]" />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-white">
+                        {ch.label}
+                      </span>
+                      {ch.hint && (
+                        <span className="block text-xs text-white/70">
+                          {ch.hint}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+
+          <div className="mx-auto mt-7 h-px w-20 bg-[#ffd96b]/40" />
           <p className="mt-6 text-sm text-white/70">
             {currentEvent.dateLabel} · {currentEvent.venue}
             {currentEvent.online ? " & Online" : ""}
