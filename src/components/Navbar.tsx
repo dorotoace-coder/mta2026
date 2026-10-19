@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { currentEvent } from "@/config/events";
 
 const links = [
   { label: "Home", href: "#" },
@@ -16,8 +17,8 @@ const Navbar = () => {
       <div className="flex items-center gap-3">
         <img src="/hbg-logo.svg" alt="HBG" className="h-9 w-14 object-contain" style={{ filter: "drop-shadow(0 0 12px rgba(200,183,255,0.28))" }} />
         <div>
-          <div className="text-sm font-bold text-white">MTA <span className="mta-gold-text">2026</span></div>
-          <div className="text-[9px] uppercase tracking-widest text-white/45">Mighty Turn Around Assembly</div>
+          <div className="text-sm font-bold text-white">{currentEvent.name}</div>
+          <div className="text-[9px] uppercase tracking-widest text-white/60">{currentEvent.subtitle}</div>
         </div>
       </div>
       <div className="hidden md:flex items-center gap-8">

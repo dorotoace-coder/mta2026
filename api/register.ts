@@ -208,15 +208,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { fullName, email, phone, whatsapp, ministry, designation, attendanceMode, fastCommitment, desire } =
-    req.body ?? {};
+  const raw = req.body ?? {};
+  const { fullName, email, phone, whatsapp, fastCommitment } = raw;
 
-  if (!fullName || !email || !phone || !ministry || !designation || !attendanceMode || !desire) {
+  // Only identity fields are universally required. Everything else depends on
+  // the programme: a three-day pastors' assembly asks for ministry,
+  // designation and fasting commitment; a one-night concert asks for none of
+  // them. The frontend decides which fields to show (src/config/events.ts) and
+  // this endpoint must accept any of those shapes rather than hardcode one
+  // event's.
+  if (!fullName || !email || !phone) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  if (attendanceMode !== "in_person" && attendanceMode !== "online") {
+
+  // Columns are NOT NULL on the registrations table, so absent optional fields
+  // are stored as empty strings rather than null.
+  const ministry: string = raw.ministry ?? "";
+  const designation: string = raw.designation ?? "";
+  const desire: string = raw.desire ?? "";
+
+  // attendanceMode is optional but must be valid when supplied. Events with no
+  // in-person/online split default to in_person.
+  const suppliedMode = raw.attendanceMode;
+  if (suppliedMode && suppliedMode !== "in_person" && suppliedMode !== "online") {
     return res.status(400).json({ error: "Invalid attendance_mode" });
   }
+  const attendanceMode: "in_person" | "online" = suppliedMode ?? "in_person";
   const normalizedFastCommitment = normalizeFastCommitment(fastCommitment);
 
   // ── Composite duplicate pre-check (UX only — the database's composite
