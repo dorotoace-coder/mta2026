@@ -1,3 +1,4 @@
+import { currentEvent } from "@/config/events";
 import RegistrationForm from "./RegistrationForm";
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,11 +13,17 @@ const RegisterSection = () => (
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <p className="mta-kicker mb-4">Secure Your Place</p>
-        <h2 className="mb-4 text-4xl font-black text-white sm:text-6xl">Register for <span className="mta-gold-text">MTA 2026</span></h2>
-        <p className="text-base text-white/58">Don't miss this divine appointment. Registration is absolutely <strong className="text-[#d7b767]">FREE</strong>.</p>
+        <p className="mta-kicker mb-4">{currentEvent.registrationOpen ? "Secure Your Place" : "Save The Date"}</p>
+        <h2 className="mb-4 text-4xl font-black text-white sm:text-6xl">{currentEvent.registrationOpen ? "Register for " : "Join Us For "}<span className="mta-gold-text">{currentEvent.subtitle}</span></h2>
+        <p className="text-base text-white/72">
+          {currentEvent.registrationOpen ? (
+            <>Don&rsquo;t miss this divine appointment. Registration is absolutely <strong className="text-[#ffd96b]">FREE</strong>.</>
+          ) : (
+            <>{currentEvent.dateLabel} &middot; {currentEvent.venue}{currentEvent.online ? " & Online" : ""}</>
+          )}
+        </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-white/56">
-          {["Opening Night", "Divine Turnaround", "Supernatural Encounters", "Celebration Service", "Free Registration"].map((f, i) => (
+          {[...currentEvent.programme.map((p) => p.title), ...(currentEvent.registrationOpen ? ["Free Registration"] : [])].map((f, i) => (
             <motion.span
               key={f}
               className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5"

@@ -213,15 +213,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { fullName, email, phone, whatsapp, ministry, designation, attendanceMode, fastCommitment, desire } =
-    req.body ?? {};
+  const raw = req.body ?? {};
+  const { fullName, email, phone, whatsapp, attendanceMode, fastCommitment } = raw;
 
-  if (!fullName || !email || !phone || !ministry || !designation || !attendanceMode || !desire) {
+  // Only identity fields are universally required. Everything else depends on
+  // the programme: a three-day pastors' assembly asks for ministry, designation
+  // and fasting commitment; a one-night concert asks for none of them. The
+  // frontend decides which fields to show (src/config/events.ts) and this
+  // endpoint must accept any of those shapes rather than hardcode one event's.
+  if (!fullName || !email || !phone) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  if (attendanceMode !== "in_person" && attendanceMode !== "online") {
+
+  // Columns are NOT NULL on the registrations table, so absent optional fields
+  // are stored as empty strings rather than null.
+  const ministry: string = raw.ministry ?? "";
+  const designation: string = raw.designation ?? "";
+  const desire: string = raw.desire ?? "";
+  const location: string = raw.location ?? "";
+
+  // attendanceMode is optional, but must be valid when supplied. Events with
+  // no in-person/online split default to in_person.
+  if (attendanceMode && attendanceMode !== "in_person" && attendanceMode !== "online") {
     return res.status(400).json({ error: "Invalid attendance_mode" });
   }
+  const resolvedAttendanceMode: "in_person" | "online" = attendanceMode ?? "in_person";
   const normalizedFastCommitment = normalizeFastCommitment(fastCommitment);
 
   // ── Composite duplicate pre-check (UX only — the database's composite
@@ -241,7 +257,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     whatsapp,
     ministry,
     designation,
-    attendanceMode,
+    attendanceMode: resolvedAttendanceMode,
     fastCommitment: normalizedFastCommitment,
     desire,
     submittedAt,
@@ -270,7 +286,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //         back to the public registration link in the email on failure —
   //         never blocks the primary registration flow. ──
   let zoomJoinUrl: string | null = null;
-  if (attendanceMode === "online") {
+  if (resolvedAttendanceMode === "online") {
     try {
       const zoomResult = await registerZoomAttendee(fullName, email);
       zoomJoinUrl = zoomResult.joinUrl;
@@ -308,7 +324,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">WhatsApp</td><td style="padding:8px 0;">${whatsapp || "—"}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Ministry</td><td style="padding:8px 0;">${ministry}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Designation</td><td style="padding:8px 0;">${designation}</td></tr>
-            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Attendance</td><td style="padding:8px 0;">${attendanceLabel(attendanceMode)}</td></tr>
+            <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Attendance</td><td style="padding:8px 0;">${attendanceLabel(resolvedAttendanceMode)}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;">Fast Commitment</td><td style="padding:8px 0;">${normalizedFastCommitment}</td></tr>
             <tr><td style="padding:8px 0;color:#B88FC7;font-size:13px;vertical-align:top;">Desire</td><td style="padding:8px 0;">${desire}</td></tr>
           </table>
@@ -342,9 +358,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <div style="background:rgba(201,151,42,0.1);border:1px solid rgba(201,151,42,0.3);border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
             <p style="margin:0;color:#C9972A;font-weight:bold;font-size:18px;">${EVENT_DATES}</p>
             <p style="margin:6px 0 0;color:#B88FC7;font-size:14px;">${EVENT_LOCATION}</p>
-            <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(attendanceMode)}</strong></p>
+            <p style="margin:10px 0 0;color:#fff;font-size:13px;">You registered to attend: <strong>${attendanceLabel(resolvedAttendanceMode)}</strong></p>
           </div>
-          ${attendanceMode === "online" ? `
+          ${resolvedAttendanceMode === "online" ? `
           <div style="background:rgba(45,140,255,0.1);border:1px solid rgba(45,140,255,0.3);border-radius:10px;padding:20px;margin:0 0 24px;text-align:center;">
             <p style="margin:0 0 12px;color:#7ec4ff;font-size:13px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;">Joining Online</p>
             <a href="${zoomJoinUrl || ZOOM_FALLBACK_REGISTRATION_URL}" style="display:inline-block;padding:12px 28px;background:#2d8cff;color:#fff;border-radius:8px;font-weight:bold;text-decoration:none;font-size:14px;">
@@ -392,7 +408,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             supabase_url_host: safeSupabaseHost(process.env.SUPABASE_URL),
             supabase_anon_key: safeKeyDiagnostics(process.env.SUPABASE_ANON_KEY),
             payload_keys: ["full_name", "email", "phone", "whatsapp", "ministry", "designation", "attendance_mode", "fast_commitment", "joining_fast", "desire", "source", "status", "created_at"],
-            attendance_mode: attendanceMode,
+            attendance_mode: resolvedAttendanceMode,
             fast_commitment: normalizedFastCommitment,
             db_error: dbError,
           }

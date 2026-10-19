@@ -4,39 +4,42 @@
 
 @layer base {
   :root {
-    --background: 230 58% 7%;
-    --foreground: 220 40% 96%;
+    /* Throne Room palette — lifted royal purple + luminous gold.
+       Brighter than the MTA original: background L 7% → 17%, accents
+       pushed up in saturation so gold reads as light, not metal. */
+    --background: 252 46% 17%;
+    --foreground: 250 60% 98%;
 
-    --card: 239 48% 16%;
+    --card: 252 40% 25%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 239 48% 16%;
+    --popover: 252 40% 25%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 43 62% 62%;
-    --primary-foreground: 230 58% 7%;
+    --primary: 45 95% 64%;
+    --primary-foreground: 252 46% 14%;
 
-    --secondary: 246 48% 28%;
+    --secondary: 264 56% 44%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 238 35% 20%;
-    --muted-foreground: 244 28% 76%;
+    --muted: 250 30% 32%;
+    --muted-foreground: 252 40% 86%;
 
-    --accent: 258 70% 78%;
-    --accent-foreground: 230 58% 7%;
+    --accent: 282 88% 74%;
+    --accent-foreground: 252 46% 14%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 235 32% 28%;
-    --input: 235 32% 28%;
-    --ring: 43 62% 62%;
+    --border: 252 34% 40%;
+    --input: 252 34% 40%;
+    --ring: 45 95% 64%;
 
     --radius: 0.75rem;
 
-    --lilac: 258 48% 70%;
-    --lilac-light: 258 70% 84%;
-    --lilac-dark: 250 42% 42%;
+    --lilac: 276 62% 76%;
+    --lilac-light: 282 88% 88%;
+    --lilac-dark: 264 48% 52%;
   }
 }
 
@@ -48,17 +51,18 @@
   body {
     @apply bg-background text-foreground;
     background:
-      radial-gradient(circle at 50% -10%, rgba(126, 115, 255, 0.24), transparent 34rem),
-      radial-gradient(circle at 15% 20%, rgba(62, 117, 255, 0.16), transparent 28rem),
-      linear-gradient(180deg, #050816 0%, #081634 42%, #120B2F 100%);
+      radial-gradient(circle at 50% -8%, rgba(255, 214, 112, 0.30), transparent 36rem),
+      radial-gradient(circle at 18% 18%, rgba(186, 128, 255, 0.26), transparent 30rem),
+      radial-gradient(circle at 85% 32%, rgba(120, 150, 255, 0.18), transparent 28rem),
+      linear-gradient(180deg, #2A1F5C 0%, #35276E 45%, #241A50 100%);
   }
 }
 
 @layer components {
   .mta-page-shell {
     background:
-      linear-gradient(180deg, rgba(5, 8, 22, 0.98) 0%, rgba(7, 20, 43, 0.98) 38%, rgba(16, 12, 48, 0.98) 100%);
-    color: #f4f7ff;
+      linear-gradient(180deg, rgba(42, 31, 92, 0.97) 0%, rgba(53, 39, 110, 0.97) 38%, rgba(36, 26, 80, 0.97) 100%);
+    color: #faf8ff;
   }
 
   .mta-section {

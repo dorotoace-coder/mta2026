@@ -1,3 +1,4 @@
+import { currentEvent } from "@/config/events";
 import { Heart, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 const Footer = () => (
@@ -12,13 +13,13 @@ const Footer = () => (
       <div className="flex flex-col items-center text-center">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-[#d7b767]" />
-          <span className="text-white font-bold text-lg">MTA <span className="mta-gold-text">2026</span></span>
+          <span className="text-white font-bold text-lg">{currentEvent.name}</span>
         </div>
         <div className="flex items-center gap-2 text-white/40 text-sm mb-4">
-          <span className="italic">"The people that do know their God shall be strong, and do exploits."</span>
+          <span className="italic">&ldquo;{currentEvent.scripture.text}&rdquo;</span>
         </div>
         <p className="text-white/25 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
-          Mighty Turn Around Assembly — September 4–6, 2026<br/>
+          {currentEvent.subtitle} — {currentEvent.dateLabel}<br/>
           HBG Ministry, 100/102 Akute Road, Martins Bus Stop, Akute, Ogun State, Nigeria<br/>
           Host: Pastor Amos Unogwu
         </p>

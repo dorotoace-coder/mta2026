@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UserPlus, ChevronDown, CheckCircle, Loader2 } from "lucide-react";
+import { currentEvent } from "@/config/events";
 
 const designations = [
   "Pastor", "Bishop", "Apostle", "Prophet", "Prophetess",
@@ -77,7 +78,7 @@ const RegistrationForm = () => {
           <h3 className="text-2xl font-bold text-white mb-2">Registration Complete!</h3>
           <p className="mb-2 text-sm leading-relaxed text-[#c8b7ff]">
             Thank you, <span className="font-semibold text-[#d7b767]">{formData.fullName}</span>!
-            Your registration for MTA 2026 — EXPLOITS has been received.
+            Your registration for {currentEvent.name} — {currentEvent.subtitle} has been received.
           </p>
           <p className="text-white/60 text-xs leading-relaxed">
             You registered to attend{" "}
@@ -93,6 +94,36 @@ const RegistrationForm = () => {
             </span>.<br />
             A confirmation email is on its way to <span className="text-white/80">{formData.email}</span>.<br />
             <span className="text-[#d7b767]">Come expecting a fresh encounter with God.</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Registration is gated on the event config rather than always-on. A form
+  // that collects details and cannot store them is worse than no form.
+  if (!currentEvent.registrationOpen) {
+    return (
+      <div className="w-full max-w-md mx-auto mb-10">
+        <div
+          className="mta-glass rounded-[1.75rem] p-8 text-center"
+          style={{
+            background:
+              "linear-gradient(145deg, rgba(53,39,110,0.82), rgba(70,48,140,0.74))",
+          }}
+        >
+          <p className="mta-kicker mb-4">Registration</p>
+          <h3 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
+            Opening Soon
+          </h3>
+          <p className="text-sm leading-relaxed text-white/75">
+            {currentEvent.registrationClosedNote ??
+              "Registration for this programme is not open yet."}
+          </p>
+          <div className="mx-auto mt-6 h-px w-20 bg-[#ffd96b]/40" />
+          <p className="mt-6 text-sm text-white/70">
+            {currentEvent.dateLabel} · {currentEvent.venue}
+            {currentEvent.online ? " & Online" : ""}
           </p>
         </div>
       </div>
@@ -237,7 +268,7 @@ const RegistrationForm = () => {
           </div>
 
           <div>
-            <label className={labelClass}>What do you desire from MTA 2026?</label>
+            <label className={labelClass}>What do you desire from {currentEvent.subtitle}?</label>
             <textarea
               name="desire" required value={formData.desire} onChange={handleChange}
               placeholder="Share your expectation or prayer request..." rows={3}
