@@ -1,19 +1,22 @@
 import { useState, useEffect } from "react";
+import { currentEvent, getEventPhase, type EventPhase } from "@/config/events";
 
-const TARGET = new Date("2026-09-04T09:00:00").getTime();
+const TARGET = new Date(currentEvent.start).getTime();
 
 const CountdownTimer = () => {
   const [time, setTime] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
-  const [live, setLive] = useState(false);
+  const [phase, setPhase] = useState<EventPhase>("before");
 
   useEffect(() => {
     const tick = () => {
-      const diff = TARGET - Date.now();
+      const now = Date.now();
+      const diff = TARGET - now;
       if (diff <= 0) {
-        setLive(true);
+        setPhase(getEventPhase(currentEvent, now));
         setTime({ days: 0, hours: 0, mins: 0, secs: 0 });
         return;
       }
+      setPhase("before");
       setTime({
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
@@ -37,16 +40,35 @@ const CountdownTimer = () => {
     <section id="countdown" className="mta-section">
       <div className="mta-container text-center">
         <p className="mta-kicker mb-4">
-          {live ? "It's Happening Now" : "Mark Your Calendar"}
+          {phase === "live"
+            ? "It's Happening Now"
+            : phase === "past"
+              ? "Thank You For Joining Us"
+              : "Mark Your Calendar"}
         </p>
         <h2 className="mb-3 text-4xl font-black tracking-tight text-white sm:text-6xl">
-          Countdown to <span className="mta-gold-text">MTA 2026</span>
+          {phase === "past" ? (
+            <>
+              <span className="mta-gold-text">{currentEvent.subtitle}</span> Has Ended
+            </>
+          ) : (
+            <>
+              Countdown to{" "}
+              <span className="mta-gold-text">{currentEvent.subtitle}</span>
+            </>
+          )}
         </h2>
-        <p className="mx-auto mb-12 max-w-xl text-sm uppercase tracking-[0.32em] text-white/55 sm:text-base">
-          September 4–6, 2026 · HBG Ministry, Akute
+        <p className="mx-auto mb-12 max-w-xl text-sm uppercase tracking-[0.32em] text-white/70 sm:text-base">
+          {currentEvent.dateLabel} · {currentEvent.venue}
+          {currentEvent.online ? " & Online" : ""}
         </p>
 
-        <div className="mx-auto flex max-w-4xl items-stretch justify-center gap-3 sm:gap-6">
+        {/* A row of zeros after the event is noise — hide it once past. */}
+        <div
+          className={`mx-auto flex max-w-4xl items-stretch justify-center gap-3 sm:gap-6 ${
+            phase === "past" ? "hidden" : ""
+          }`}
+        >
           {units.map((unit) => (
             <div
               key={unit.label}

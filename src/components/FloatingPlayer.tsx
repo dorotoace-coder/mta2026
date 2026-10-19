@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { Pause, Play, Music2, X } from "lucide-react";
-import { mtaAudioTracks } from "@/lib/mtaAudioTracks";
+import { currentEvent } from "@/config/events";
+
+const mtaAudioTracks = currentEvent.audioTracks;
 
 const FloatingPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -8,6 +10,10 @@ const FloatingPlayer = () => {
   const [visible, setVisible] = useState(true);
   const [trackIndex, setTrackIndex] = useState(0);
   const selectedTrack = mtaAudioTracks[trackIndex];
+
+  // Events with no promo audio hide the player rather than showing an empty
+  // shell or, worse, another event's recording.
+  if (mtaAudioTracks.length === 0) return null;
 
   const toggle = () => {
     const audio = audioRef.current;
