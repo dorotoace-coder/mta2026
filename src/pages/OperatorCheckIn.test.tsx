@@ -122,7 +122,7 @@ describe("OperatorCheckIn", () => {
     // Simulate the scanner hook decoding a real check-in QR payload —
     // this exercises the exact handleDecoded -> openConfirmForRegistrationId
     // wiring that a stale closure previously broke after sign-in.
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
 
     await screen.findByText("Scanned Person");
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining(`registrationId=${REG_ID}`), expect.anything());
@@ -161,7 +161,7 @@ describe("OperatorCheckIn", () => {
     await screen.findByPlaceholderText("Operator secret");
     await signIn();
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
     await screen.findByText("Success Person");
 
     fireEvent.click(screen.getByText("Check In"));
@@ -184,7 +184,7 @@ describe("OperatorCheckIn", () => {
     await screen.findByPlaceholderText("Operator secret");
     await signIn();
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
     await screen.findByText("Dup Person");
     fireEvent.click(screen.getByText("Check In"));
 
@@ -211,7 +211,7 @@ describe("OperatorCheckIn", () => {
     await screen.findByPlaceholderText("Operator secret");
     await signIn();
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
     await screen.findByText("Mistake Person");
     fireEvent.click(screen.getByText("Check In"));
     await screen.findByText(/This was a mistake/);
@@ -244,7 +244,7 @@ describe("OperatorCheckIn", () => {
     await screen.findByPlaceholderText("Operator secret");
     await signIn();
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
     await screen.findByText("Fail Person");
     fireEvent.click(screen.getByText("Check In"));
     await screen.findByText(/This was a mistake/);
@@ -322,7 +322,7 @@ describe("OperatorCheckIn", () => {
 
     // Participant A: override to Day 2.
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_ID}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_ID}`);
     await screen.findByText("Participant A");
     expect(screen.getByText("Day 1 — Fri, Sept 4")).toBeTruthy(); // default before any override
 
@@ -342,7 +342,7 @@ describe("OperatorCheckIn", () => {
     // Participant B: the day must have reverted to the default — no
     // override should be silently inherited from A.
     fireEvent.click(screen.getByText("Scan QR"));
-    capturedOnDecoded!(`https://tribex.heartbeatofgod.ca/checkin/${REG_B}`);
+    capturedOnDecoded!(`https://events.heartbeatofgod.ca/checkin/${REG_B}`);
     await screen.findByText("Participant B");
     expect(screen.getByText("Day 1 — Fri, Sept 4")).toBeTruthy();
     expect(screen.queryByText("Day 2 — Sat, Sept 5")).toBeNull();
