@@ -148,10 +148,12 @@ export const EVENTS: Record<string, HbgEvent> = {
     subtitle: "Throne Room",
     kicker: "HBG Ministry Concert",
     theme: "THRONE ROOM",
+    // The naming verse. "Tribe" is Revelation language — the event is named
+    // from this text, so it anchors the page. See TRIBEX_BIBLICAL_FOUNDATION.md.
     scripture: {
-      ref: "Psalm 46:10 · KJV",
+      ref: "Revelation 7:9 · KJV",
       text:
-        "Be still, and know that I am God: I will be exalted among the heathen, I will be exalted in the earth.",
+        "A great multitude, which no man could number, of all nations, and kindreds, and people, and tongues, stood before the throne, and before the Lamb.",
     },
     start: "2026-11-27T19:00:00",
     end: "2026-11-27T21:30:00",
@@ -204,8 +206,9 @@ export const EVENTS: Record<string, HbgEvent> = {
       headline: "One night to come before",
       highlight: "the throne",
       paragraphs: [
-        "TRIBE X is HBG Ministry's night of prophetic worship — a gathering built around presence rather than programme. The songs are not a warm-up. They are the room.",
-        "Come as you are, in Akute or online. Be still long enough to know that He is God, and leave with a reason to live.",
+        "Revelation describes a multitude no man could number — every nation, kindred, people and tongue — standing together before the throne. TRIBE X is a rehearsal of that scene, for one night, in Akute.",
+        "The sound is not a warm-up for something else. From David's musicians to Elisha's minstrel, the playing itself has carried the prophetic. The songs are the room.",
+        "Come as you are, in person or online. Nobody leaves the throne room unchanged, and nobody leaves unassigned.",
       ],
       features: [
         { icon: "waves", label: "Prophetic Worship" },
