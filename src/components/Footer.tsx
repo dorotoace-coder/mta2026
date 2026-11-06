@@ -14,7 +14,7 @@ const Footer = () => (
         <p className="text-white/25 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
           {currentEvent.subtitle} — {currentEvent.dateLabel}<br/>
           HBG Ministry, 100/102 Akute Road, Martins Bus Stop, Akute, Ogun State, Nigeria<br/>
-          Host: Pastor Amos Unogwu
+          Hosted by Intimacy
         </p>
         <div className="w-16 h-px mb-6" style={{ background: "rgba(215,183,103,0.28)" }} />
         <p className="text-white/20 text-xs flex items-center gap-1">
