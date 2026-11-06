@@ -229,12 +229,12 @@ export const EVENTS: Record<string, HbgEvent> = {
     audioTracks: [],
     flyer: {
       src: "/tribe-x-throne-room.jpg",
-      alt: "TRIBE X — Throne Room. A night of worship and prophecy. November 27, 2026. Host: Pastor Amos Unogwu.",
+      alt: "TRIBE X — Throne Room. A night of prophetic worship and the Word, hosted by Intimacy. Friday, November 27, 2026, 7:00 PM WAT. Akute and online. Free entry.",
     },
     meta: {
       title: "TRIBE X — Throne Room | HBG Ministry",
       description:
-        "A night of worship and prophecy with Pastor Amos Unogwu. November 27, 2026. Akute, Nigeria and online. Free registration.",
+        "A night of prophetic worship and the Word, hosted by Intimacy. November 27, 2026. Akute, Nigeria and online. Free registration.",
     },
   },
 
