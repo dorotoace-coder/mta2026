@@ -3,7 +3,7 @@
  * (rather than imported across the api/src boundary) to keep the
  * frontend bundle independent of the serverless-function source tree.
  */
-export const EVENT_DATES = ["2026-09-04", "2026-09-05", "2026-09-06"] as const;
+export const EVENT_DATES = ["2026-09-04", "2026-09-05", "2026-09-06", "2026-11-27"] as const;
 export type EventDate = (typeof EVENT_DATES)[number];
 
 export function isValidEventDate(value: string): value is EventDate {

@@ -3,7 +3,7 @@
  * tracked per event day, not once per lifetime, so a registrant can be
  * checked in on each day they attend.
  */
-export const EVENT_DATES = ["2026-09-04", "2026-09-05", "2026-09-06"] as const;
+export const EVENT_DATES = ["2026-09-04", "2026-09-05", "2026-09-06", "2026-11-27"] as const;
 export type EventDate = (typeof EVENT_DATES)[number];
 
 export function isValidEventDate(value: unknown): value is EventDate {
