@@ -52,6 +52,7 @@ const eventDateLabel = (date: string) => {
     "2026-09-04": "Day 1 — Fri, Sept 4",
     "2026-09-05": "Day 2 — Sat, Sept 5",
     "2026-09-06": "Day 3 — Sun, Sept 6",
+    "2026-11-27": "TRIBE X — Fri, Nov 27",
   };
   return labels[date] ?? date;
 };
