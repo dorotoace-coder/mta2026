@@ -74,8 +74,10 @@ export type HbgEvent = {
   theme: string;
   scripture: { ref: string; text: string };
 
-  /** ISO local time. `end` is required — it is what stops a finished event
-   *  claiming to still be live. */
+  /** ISO time WITH the venue's UTC offset (Akute is WAT, "+01:00"). Without
+   *  the offset, browsers read it as the viewer's local time, so anyone
+   *  outside Nigeria would count down to the wrong moment. `end` is
+   *  required — it is what stops a finished event claiming to still be live. */
   start: string;
   end: string;
   /** Human label, e.g. "November 27, 2026" */
@@ -155,8 +157,8 @@ export const EVENTS: Record<string, HbgEvent> = {
       text:
         "A great multitude, which no man could number, of all nations, and kindreds, and people, and tongues, stood before the throne, and before the Lamb.",
     },
-    start: "2026-11-27T19:00:00",
-    end: "2026-11-27T21:30:00",
+    start: "2026-11-27T19:00:00+01:00",
+    end: "2026-11-27T21:30:00+01:00",
     dateLabel: "November 27, 2026",
     venue: "HBG Ministry, Akute",
     online: true,
@@ -249,8 +251,8 @@ export const EVENTS: Record<string, HbgEvent> = {
       ref: "Daniel 11:32 · KJV",
       text: "The people that do know their God shall be strong, and do exploits.",
     },
-    start: "2026-09-04T17:00:00",
-    end: "2026-09-06T13:00:00",
+    start: "2026-09-04T17:00:00+01:00",
+    end: "2026-09-06T13:00:00+01:00",
     dateLabel: "September 4–6, 2026",
     venue: "HBG Ministry, Akute",
     online: true,
