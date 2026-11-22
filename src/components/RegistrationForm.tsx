@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, ChevronDown, CheckCircle, Loader2, MessageCircle, Mail } from "lucide-react";
+import { UserPlus, ChevronDown, CheckCircle, Loader2, MessageCircle, Mail, ArrowRight } from "lucide-react";
 import { currentEvent } from "@/config/events";
 
 const designations = [
@@ -106,71 +106,65 @@ const RegistrationForm = () => {
     const external = currentEvent.externalRegistration;
 
     return (
-      <div className="w-full max-w-md mx-auto mb-10">
-        <div
-          className="mta-glass rounded-[1.75rem] p-8 text-center"
-          style={{
-            background:
-              "linear-gradient(145deg, rgba(53,39,110,0.82), rgba(70,48,140,0.74))",
-          }}
-        >
-          <p className="mta-kicker mb-4">Registration</p>
-          <h3 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-            {external ? "Reserve Your Place" : "Opening Soon"}
-          </h3>
-          <p className="text-sm leading-relaxed text-white/75">
-            {external?.note ??
-              currentEvent.registrationClosedNote ??
-              "Registration for this programme is not open yet."}
-          </p>
+      <div className="mx-auto w-full max-w-lg">
+        <div className="mta-glass relative overflow-hidden rounded-[2rem] p-7 sm:p-9">
+          <div aria-hidden className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[#e8c977]/80 to-transparent" />
+          <div className="text-center">
+            <p className="mta-kicker mb-3">Registration</p>
+            <h3 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+              {external ? "Reserve your place" : "Opening soon"}
+            </h3>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/70">
+              {external?.note ??
+                currentEvent.registrationClosedNote ??
+                "Registration for this programme is not open yet."}
+            </p>
+          </div>
 
           {external && (
             <div className="mt-7 space-y-3">
-              {external.channels.map((ch) => (
-                <a
-                  key={ch.type + ch.url}
-                  href={ch.url}
-                  target={ch.type === "email" ? undefined : "_blank"}
-                  rel="noopener noreferrer"
-                  className="block rounded-2xl px-5 py-4 text-left transition hover:brightness-110"
-                  style={{
-                    background:
-                      ch.type === "whatsapp"
-                        ? "linear-gradient(135deg, #25D366, #128C7E)"
-                        : "rgba(255,255,255,0.09)",
-                    border:
-                      ch.type === "whatsapp"
-                        ? "none"
-                        : "1px solid rgba(255,255,255,0.18)",
-                  }}
-                >
-                  <span className="flex items-center gap-3">
-                    {ch.type === "whatsapp" ? (
-                      <MessageCircle className="h-5 w-5 shrink-0 text-white" />
-                    ) : (
-                      <Mail className="h-5 w-5 shrink-0 text-[#ffd96b]" />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-white">
-                        {ch.label}
-                      </span>
+              {external.channels.map((ch) => {
+                const isWhatsApp = ch.type === "whatsapp";
+                return (
+                  <a
+                    key={ch.type + ch.url}
+                    href={ch.url}
+                    target={isWhatsApp ? "_blank" : undefined}
+                    rel="noopener noreferrer"
+                    className={`group flex items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f7e6a8] ${
+                      isWhatsApp
+                        ? "bg-gradient-to-br from-[#25D366] to-[#128C7E] shadow-[0_14px_40px_rgba(37,211,102,0.25)] hover:shadow-[0_18px_50px_rgba(37,211,102,0.35)]"
+                        : "border border-white/15 bg-white/[0.06] hover:border-[#e8c977]/45 hover:bg-white/[0.1]"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                        isWhatsApp ? "bg-white/20" : "bg-[#e8c977]/15 ring-1 ring-inset ring-[#e8c977]/30"
+                      }`}
+                    >
+                      {isWhatsApp ? (
+                        <MessageCircle className="h-5 w-5 text-white" aria-hidden />
+                      ) : (
+                        <Mail className="h-5 w-5 text-[#ffd96b]" aria-hidden />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-bold text-white">{ch.label}</span>
                       {ch.hint && (
-                        <span className="block text-xs text-white/70">
+                        <span className={`mt-0.5 block text-xs leading-snug ${isWhatsApp ? "text-white/85" : "text-white/60"}`}>
                           {ch.hint}
                         </span>
                       )}
                     </span>
-                  </span>
-                </a>
-              ))}
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-white/70 transition-transform group-hover:translate-x-1"
+                      aria-hidden
+                    />
+                  </a>
+                );
+              })}
             </div>
           )}
-
-          <div className="mx-auto mt-7 h-px w-20 bg-[#ffd96b]/40" />
-          <p className="mt-6 text-sm text-white/70">
-            {currentEvent.dateLabel} · {currentEvent.venue}
-            {currentEvent.online ? " & Online" : ""}
-          </p>
         </div>
       </div>
     );

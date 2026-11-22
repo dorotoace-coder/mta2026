@@ -36,54 +36,44 @@ const CountdownTimer = () => {
     { label: "Seconds", value: time.secs },
   ];
 
-  return (
-    <section id="countdown" className="mta-section">
-      <div className="mta-container text-center">
-        <p className="mta-kicker mb-4">
-          {phase === "live"
-            ? "It's Happening Now"
-            : phase === "past"
-              ? "Thank You For Joining Us"
-              : "Mark Your Calendar"}
-        </p>
-        <h2 className="mb-3 text-4xl font-black tracking-tight text-white sm:text-6xl">
-          {phase === "past" ? (
-            <>
-              <span className="mta-gold-text">{currentEvent.subtitle}</span> Has Ended
-            </>
-          ) : (
-            <>
-              Countdown to{" "}
-              <span className="mta-gold-text">{currentEvent.subtitle}</span>
-            </>
-          )}
-        </h2>
-        <p className="mx-auto mb-12 max-w-xl text-sm uppercase tracking-[0.32em] text-white/70 sm:text-base">
-          {currentEvent.dateLabel} · {currentEvent.venue}
-          {currentEvent.online ? " & Online" : ""}
-        </p>
+  const heading =
+    phase === "live" ? "It's happening now" : phase === "past" ? "Thank you for joining us" : "The doors open in";
 
-        {/* A row of zeros after the event is noise — hide it once past. */}
-        <div
-          className={`mx-auto flex max-w-4xl items-stretch justify-center gap-3 sm:gap-6 ${
-            phase === "past" ? "hidden" : ""
-          }`}
-        >
-          {units.map((unit) => (
-            <div
-              key={unit.label}
-              className="mta-glass flex flex-1 flex-col items-center justify-center rounded-3xl px-2 py-6 sm:py-9"
-            >
-              <div
-                className="mta-gold-text text-5xl font-black leading-none tabular-nums sm:text-8xl"
-                style={{ textShadow: "0 18px 40px rgba(126,115,255,0.25)" }}
-              >
-                {String(unit.value).padStart(2, "0")}
-              </div>
-              <div className="mta-kicker mt-3 text-[10px] sm:text-xs">{unit.label}</div>
-            </div>
-          ))}
+  return (
+    <section id="countdown" aria-label="Countdown" className="relative px-5 sm:px-8">
+      <div
+        data-reveal
+        className="mta-glass relative mx-auto flex max-w-5xl flex-col items-center gap-8 overflow-hidden rounded-[2rem] px-6 py-8 sm:px-10 lg:flex-row lg:justify-between lg:gap-10 lg:py-9"
+      >
+        <div aria-hidden className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[#e8c977]/70 to-transparent" />
+
+        <div className="text-center lg:text-left">
+          <p className="mta-kicker mb-2">{phase === "past" ? currentEvent.subtitle : "Mark your calendar"}</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{heading}</h2>
+          <p className="mt-2 text-sm text-white/60">
+            {currentEvent.dateLabel} · {currentEvent.venue}
+            {currentEvent.online ? " & Online" : ""}
+          </p>
         </div>
+
+        {/* A row of zeros once the doors open is noise — only count down before. */}
+        {phase === "before" && (
+          <div className="grid w-full max-w-lg grid-cols-4 lg:w-auto" role="timer" aria-live="off">
+            {units.map((unit, i) => (
+              <div
+                key={unit.label}
+                className={`flex flex-col items-center px-2 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
+              >
+                <span className="mta-gold-text text-4xl font-extrabold leading-none tabular-nums sm:text-6xl">
+                  {String(unit.value).padStart(2, "0")}
+                </span>
+                <span className="mt-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/50 sm:text-[11px]">
+                  {unit.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

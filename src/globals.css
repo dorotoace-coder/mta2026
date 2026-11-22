@@ -59,29 +59,97 @@
 }
 
 @layer components {
+  /* One continuous backdrop for the whole page. Sections no longer paint
+     their own bands, so there are no visible seams between them. */
   .mta-page-shell {
-    background:
-      linear-gradient(180deg, rgba(42, 31, 92, 0.97) 0%, rgba(53, 39, 110, 0.97) 38%, rgba(36, 26, 80, 0.97) 100%);
+    position: relative;
+    isolation: isolate;
     color: #faf8ff;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 214, 112, 0.16), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 0% 35%, rgba(186, 128, 255, 0.18), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 100% 65%, rgba(120, 150, 255, 0.14), transparent 70%),
+      linear-gradient(180deg, #1c1446 0%, #2a1f5c 30%, #2d2163 60%, #160f38 100%);
+  }
+
+  /* Faint starfield — "a multitude no man could number". */
+  .mta-page-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.55;
+    background-image:
+      radial-gradient(1px 1px at 12% 8%, rgba(255,255,255,0.7), transparent 60%),
+      radial-gradient(1px 1px at 78% 14%, rgba(255,255,255,0.55), transparent 60%),
+      radial-gradient(1.5px 1.5px at 42% 22%, rgba(255,232,170,0.7), transparent 60%),
+      radial-gradient(1px 1px at 88% 41%, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(1px 1px at 6% 52%, rgba(255,255,255,0.45), transparent 60%),
+      radial-gradient(1.5px 1.5px at 64% 63%, rgba(255,232,170,0.55), transparent 60%),
+      radial-gradient(1px 1px at 24% 77%, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(1px 1px at 92% 86%, rgba(255,255,255,0.45), transparent 60%);
+    background-size: 640px 640px;
   }
 
   .mta-section {
     position: relative;
-    overflow: hidden;
-    padding-top: 6rem;
-    padding-bottom: 6rem;
+    padding-top: clamp(4.5rem, 9vw, 7.5rem);
+    padding-bottom: clamp(4.5rem, 9vw, 7.5rem);
   }
 
-  .mta-section::before {
+  /* Hairline + diamond ornament used between headline and body copy. */
+  .mta-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: #e8c977;
+  }
+  .mta-ornament::before,
+  .mta-ornament::after {
     content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.035) 42%, transparent 58%),
-      radial-gradient(circle at 80% 20%, rgba(200, 183, 255, 0.13), transparent 28rem),
-      radial-gradient(circle at 20% 70%, rgba(41, 108, 255, 0.12), transparent 30rem);
-    opacity: 0.82;
+    height: 1px;
+    width: 3.5rem;
+    background: linear-gradient(90deg, transparent, rgba(232, 201, 119, 0.6));
+  }
+  .mta-ornament::after {
+    background: linear-gradient(270deg, transparent, rgba(232, 201, 119, 0.6));
+  }
+
+  .mta-heading {
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.02;
+    color: #fff;
+    text-wrap: balance;
+  }
+
+  .mta-scripture {
+    font-family: "Cormorant Garamond", ui-serif, Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  /* Scroll-in reveal. Hidden only once JS has marked the page ready, so the
+     content is always visible without JS and for reduced-motion users. */
+  .js-reveal [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .js-reveal [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .js-reveal [data-reveal] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 
   .mta-container {
@@ -93,11 +161,11 @@
   }
 
   .mta-kicker {
-    color: #d7b767;
+    color: #e8c977;
     font-size: 0.72rem;
     line-height: 1rem;
     font-weight: 800;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
   }
 
@@ -129,15 +197,49 @@
   }
 
   .mta-primary-button {
-    background: linear-gradient(135deg, #f3df9b 0%, #d7b767 48%, #b89139 100%);
-    color: #07142b;
-    box-shadow: 0 18px 45px rgba(215, 183, 103, 0.22);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f7e6a8 0%, #e2c070 48%, #bf9440 100%);
+    color: #1a1240;
+    box-shadow:
+      0 14px 40px rgba(226, 192, 112, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .mta-primary-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.7s ease;
+  }
+  .mta-primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 20px 50px rgba(226, 192, 112, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+  .mta-primary-button:hover::after {
+    transform: translateX(120%);
   }
 
   .mta-secondary-button {
-    background: rgba(255,255,255,0.055);
-    border: 1px solid rgba(200, 183, 255, 0.26);
-    color: rgba(244,247,255,0.82);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(214, 197, 255, 0.28);
+    color: rgba(244,247,255,0.88);
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+  .mta-secondary-button:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(232, 201, 119, 0.55);
+    transform: translateY(-2px);
+  }
+
+  .mta-primary-button:focus-visible,
+  .mta-secondary-button:focus-visible {
+    outline: 2px solid #f7e6a8;
+    outline-offset: 3px;
   }
 
   .mta-soft-border {
