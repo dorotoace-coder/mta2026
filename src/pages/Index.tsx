@@ -5,17 +5,24 @@ import AboutSection from "@/components/AboutSection";
 import ScheduleSection from "@/components/ScheduleSection";
 import RegisterSection from "@/components/RegisterSection";
 import Footer from "@/components/Footer";
+import { useReveal } from "@/hooks/useReveal";
 
-const Index = () => (
-  <div className="min-h-screen mta-page-shell">
-    <Navbar />
-    <HeroSection />
-    <CountdownTimer />
-    <AboutSection />
-    <ScheduleSection />
-    <RegisterSection />
-    <Footer />
-  </div>
-);
+const Index = () => {
+  useReveal();
+
+  return (
+    <div className="min-h-screen overflow-x-clip mta-page-shell">
+      <Navbar />
+      <main>
+        <HeroSection />
+        <CountdownTimer />
+        <AboutSection />
+        <ScheduleSection />
+        <RegisterSection />
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 export default Index;

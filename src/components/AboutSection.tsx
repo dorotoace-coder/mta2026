@@ -13,13 +13,13 @@ const AboutSection = () => {
   const { leadIn, about, scripture } = currentEvent;
 
   return (
-    <section id="about" className="mta-section">
+    <section id="about" className="mta-section scroll-mt-20">
       <div className="mta-container">
         {/* Run-up season. MTA had a 21-day fast; a one-night concert has
             nothing before it, so the whole rail is skipped rather than
             rendered empty. */}
         {leadIn.length > 0 && (
-          <div className="mb-20 rounded-[2rem] p-6 mta-panel sm:p-8">
+          <div data-reveal className="mb-20 rounded-[2rem] p-6 mta-panel sm:p-8">
             <p className="mta-kicker mb-6">
               Divine Sequence — The Road to {currentEvent.name}
             </p>
@@ -54,44 +54,73 @@ const AboutSection = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <p className="mta-kicker mb-4">{about.kicker}</p>
-            <h2 className="mb-6 text-4xl font-black leading-tight text-white sm:text-6xl">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+          <div data-reveal>
+            <p className="mta-kicker mb-5">{about.kicker}</p>
+            <h2 className="mta-heading mb-8 text-[2.6rem] sm:text-6xl">
               {about.headline} <span className="mta-gold-text">{about.highlight}</span>.
             </h2>
-            {about.paragraphs.map((para) => (
-              <p key={para} className="mb-5 text-base leading-relaxed text-white/75">
-                {para}
-              </p>
-            ))}
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+            <div className="space-y-5 border-l border-[#e8c977]/30 pl-6">
+              {about.paragraphs.map((para, i) => (
+                <p
+                  key={para}
+                  className={
+                    i === 0
+                      ? "text-lg leading-relaxed text-white/85"
+                      : "text-base leading-relaxed text-white/68"
+                  }
+                >
+                  {para}
+                </p>
+              ))}
+            </div>
+
+            <ul className="mt-10 grid grid-cols-2 gap-3">
               {about.features.map(({ icon, label }) => {
                 const Icon = ICONS[icon];
                 return (
-                  <div
+                  <li
                     key={label}
-                    className="mta-glass flex items-center gap-3 rounded-2xl p-4"
+                    className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 transition-colors hover:border-[#e8c977]/40 hover:bg-white/[0.07]"
                   >
-                    <Icon className="h-5 w-5 shrink-0 text-[#ffd96b]" />
-                    <span className="text-sm font-semibold text-white/90">{label}</span>
-                  </div>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ffe9a8]/25 to-[#ba80ff]/20 ring-1 ring-inset ring-[#e8c977]/30">
+                      <Icon className="h-[18px] w-[18px] text-[#ffd96b]" aria-hidden />
+                    </span>
+                    <span className="text-sm font-bold leading-tight text-white/90">{label}</span>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
 
-          <div className="mta-glass relative overflow-hidden rounded-[2rem] p-8 text-center sm:p-10">
-            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#ffd96b]/70 to-transparent" />
-            <p className="mb-6 font-serif text-2xl italic leading-relaxed text-white/92 sm:text-3xl">
-              &ldquo;{scripture.text}&rdquo;
-            </p>
-            <p className="mta-kicker mb-8">{scripture.ref}</p>
-            <div className="mx-auto h-px w-24 bg-[#ffd96b]/40" />
-            <p className="mx-auto mt-8 max-w-sm text-sm leading-relaxed text-white/65">
-              {currentEvent.hero.subhead}
-            </p>
-          </div>
+          <figure
+            data-reveal
+            style={{ ["--reveal-delay" as string]: "120ms" }}
+            className="mta-glass relative overflow-hidden rounded-[2rem] px-8 pb-10 pt-14 text-center sm:px-12"
+          >
+            <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#e8c977]/80 to-transparent" />
+            <div
+              aria-hidden
+              className="absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full opacity-60 blur-3xl"
+              style={{ background: "radial-gradient(circle, rgba(255,217,107,0.35), transparent 70%)" }}
+            />
+            <span
+              aria-hidden
+              className="mta-scripture pointer-events-none absolute left-6 top-2 select-none text-[7rem] leading-none text-[#e8c977]/20"
+            >
+              &ldquo;
+            </span>
+            <Crown className="relative mx-auto mb-6 h-7 w-7 text-[#e8c977]" aria-hidden />
+            <blockquote className="mta-scripture relative text-[1.65rem] leading-snug text-white/95 sm:text-[2rem]">
+              {scripture.text}
+            </blockquote>
+            <figcaption className="relative mt-6">
+              <span className="mta-kicker">{scripture.ref}</span>
+              <div className="mta-ornament my-7 text-[10px]" aria-hidden>◆</div>
+              <span className="block text-sm leading-relaxed text-white/65">{currentEvent.hero.subhead}</span>
+            </figcaption>
+          </figure>
         </div>
       </div>
     </section>

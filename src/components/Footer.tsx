@@ -1,27 +1,36 @@
-import { Heart, Sparkles } from "lucide-react";
+import { Heart } from "lucide-react";
 import { currentEvent } from "@/config/events";
+
 const Footer = () => (
-  <footer className="relative py-14" style={{ background: "linear-gradient(180deg, #100c30 0%, #050816 100%)" }}>
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+  <footer className="relative border-t border-white/10 bg-[#120c2e]/70">
+    <div aria-hidden className="absolute inset-x-0 top-0 mx-auto h-px max-w-xl bg-gradient-to-r from-transparent via-[#e8c977]/60 to-transparent" />
+    <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
       <div className="flex flex-col items-center text-center">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-[#d7b767]" />
-          <span className="text-white font-bold text-lg">{currentEvent.name}</span>
-        </div>
-        <div className="flex items-center gap-2 text-white/40 text-sm mb-4">
-          <span className="italic">&ldquo;{currentEvent.scripture.text}&rdquo;</span>
-        </div>
-        <p className="text-white/25 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
-          {currentEvent.subtitle} — {currentEvent.dateLabel}<br/>
-          HBG Ministry, 100/102 Akute Road, Martins Bus Stop, Akute, Ogun State, Nigeria<br/>
-          Hosted by Intimacy
+        <img src="/hbg-logo.svg" alt="HBG Ministry" className="mb-4 h-10 w-16 object-contain opacity-90" />
+        <p className="text-lg font-extrabold tracking-wide text-white">
+          {currentEvent.name} <span className="font-semibold text-white/50">·</span>{" "}
+          <span className="mta-gold-text">{currentEvent.subtitle}</span>
         </p>
-        <div className="w-16 h-px mb-6" style={{ background: "rgba(215,183,103,0.28)" }} />
-        <p className="text-white/20 text-xs flex items-center gap-1">
-          Made with <Heart className="w-3 h-3" style={{ color: "rgba(200,183,255,0.55)" }} /> for the Kingdom
+        <p className="mta-scripture mx-auto mt-4 max-w-2xl text-lg leading-snug text-white/55">
+          &ldquo;{currentEvent.scripture.text}&rdquo;
+        </p>
+
+        <div className="mta-ornament my-8 text-[9px]" aria-hidden>◆</div>
+
+        <address className="max-w-md text-sm not-italic leading-relaxed text-white/45">
+          {currentEvent.dateLabel}
+          <br />
+          HBG Ministry, 100/102 Akute Road, Martins Bus Stop, Akute, Ogun State, Nigeria
+          <br />
+          Hosted by Intimacy
+        </address>
+
+        <p className="mt-8 flex items-center gap-1.5 text-xs text-white/35">
+          Made with <Heart className="h-3 w-3 fill-current text-[#c8b7ff]/60" aria-hidden /> for the Kingdom
         </p>
       </div>
     </div>
   </footer>
 );
+
 export default Footer;

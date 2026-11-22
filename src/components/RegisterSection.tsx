@@ -1,29 +1,41 @@
 import RegistrationForm from "./RegistrationForm";
-import { Check } from "lucide-react";
 import { currentEvent } from "@/config/events";
 
 const RegisterSection = () => (
-  <section id="register" className="mta-section">
+  <section id="register" className="mta-section scroll-mt-20">
+    {/* Glow behind the call to action */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-1/3 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full opacity-60 blur-3xl"
+      style={{ background: "radial-gradient(circle, rgba(186,128,255,0.35), rgba(255,217,107,0.12) 50%, transparent 72%)" }}
+    />
     <div className="mta-container max-w-3xl">
-      <div className="mb-12 text-center">
-        <p className="mta-kicker mb-4">{currentEvent.registrationOpen ? "Secure Your Place" : "Save The Date"}</p>
-        <h2 className="mb-4 text-4xl font-black text-white sm:text-6xl">{currentEvent.registrationOpen ? "Register for " : "Join Us For "}<span className="mta-gold-text">{currentEvent.subtitle}</span></h2>
-        <p className="text-base text-white/72">
+      <div data-reveal className="mb-12 text-center">
+        <p className="mta-kicker mb-4">
+          {currentEvent.registrationOpen ? "Secure Your Place" : "Save The Date"}
+        </p>
+        <h2 className="mta-heading text-[2.6rem] sm:text-6xl">
+          {currentEvent.registrationOpen ? "Register for " : "Join us for "}
+          <span className="mta-gold-text">{currentEvent.subtitle}</span>
+        </h2>
+        <div className="mta-ornament my-6 text-[10px]" aria-hidden>◆</div>
+        <p className="mx-auto max-w-lg text-base leading-relaxed text-white/70">
           {currentEvent.registrationOpen ? (
-            <>Don&rsquo;t miss this divine appointment. Registration is absolutely <strong className="text-[#ffd96b]">FREE</strong>.</>
+            <>
+              Don&rsquo;t miss this divine appointment. Registration is absolutely{" "}
+              <strong className="text-[#ffd96b]">free</strong>.
+            </>
           ) : (
-            <>{currentEvent.dateLabel} &middot; {currentEvent.venue}{currentEvent.online ? " & Online" : ""}</>
+            <>
+              {currentEvent.dateLabel} &middot; {currentEvent.venue}
+              {currentEvent.online ? " & Online" : ""}
+            </>
           )}
         </p>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-white/56">
-          {[...currentEvent.programme.map((p) => p.title), ...(currentEvent.registrationOpen ? ["Free Registration"] : [])].map((f) => (
-            <span key={f} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5">
-              <Check className="h-3.5 w-3.5 text-[#d7b767]" /> {f}
-            </span>
-          ))}
-        </div>
       </div>
-      <RegistrationForm />
+      <div data-reveal style={{ ["--reveal-delay" as string]: "120ms" }}>
+        <RegistrationForm />
+      </div>
     </div>
   </section>
 );
